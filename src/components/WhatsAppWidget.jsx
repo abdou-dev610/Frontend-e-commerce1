@@ -49,7 +49,7 @@ const WhatsAppWidget = () => {
         }} className="wa-backdrop" />
       )}
 
-      <div style={{ position: "fixed", bottom: "28px", right: "28px", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
+      <div style={{ position: "fixed", bottom: "28px", right: "28px", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px", pointerEvents: "none" }}>
 
         {/* ── Chat Panel ── */}
         <div style={{
@@ -59,7 +59,7 @@ const WhatsAppWidget = () => {
           boxShadow: "0 20px 60px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05)",
           transform: open ? "translateY(0) scale(1)" : "translateY(20px) scale(0.92)",
           opacity: open ? 1 : 0,
-          pointerEvents: open ? "all" : "none",
+          pointerEvents: open ? "auto" : "none",
           transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
           transformOrigin: "bottom right",
         }}>
@@ -200,6 +200,7 @@ const WhatsAppWidget = () => {
           style={{
             width: "60px", height: "60px",
             borderRadius: "50%", border: "none", cursor: "pointer",
+            pointerEvents: "auto",
             background: "linear-gradient(135deg, #1a1200 0%, #3d2800 100%)",
             boxShadow: "0 8px 30px rgba(212,160,23,0.5)",
             display: "flex", alignItems: "center", justifyContent: "center",

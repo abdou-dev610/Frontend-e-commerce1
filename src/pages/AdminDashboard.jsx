@@ -167,12 +167,13 @@ const KpiCard = ({ label, value, sub, color, icon }) => (
   </div>
 );
 
-const Modal = ({ title, onClose, children, wide }) => (
+const Modal = ({ title, onClose, children, wide }) => createPortal(
   <div
     style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
       display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 9999, padding: "16px", overflowY: "auto",
+      zIndex: 100000, padding: "16px", overflowY: "auto",
+      pointerEvents: "auto",
     }}
     onClick={(e) => e.target === e.currentTarget && onClose()}
   >
@@ -181,6 +182,7 @@ const Modal = ({ title, onClose, children, wide }) => (
       width: "100%", maxWidth: wide ? "820px" : "520px",
       boxShadow: "0 24px 64px rgba(0,0,0,0.2)",
       maxHeight: "90vh", overflowY: "auto",
+      pointerEvents: "auto",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h3 style={{ margin: 0, fontSize: "17px", fontWeight: "700", color: C.text }}>{title}</h3>
@@ -192,7 +194,8 @@ const Modal = ({ title, onClose, children, wide }) => (
       </div>
       {children}
     </div>
-  </div>
+  </div>,
+  document.body
 );
 
 const Btn = ({ children, onClick, color = C.primary, outline, disabled, sm, style: extra = {} }) => (
@@ -861,6 +864,7 @@ const ProductsTab = ({ refreshKey = 0 }) => {
   const [delConfirm, setDelConfirm] = useState(null);
   const [formError, setFormError]   = useState("");
   const [isLocalMode, setIsLocalMode] = useState(false);
+  const [isCustomCat, setIsCustomCat] = useState(false);
   const fileInputRef = useRef(null);
   const [search, setSearch]       = useState("");
   const [page, setPage]           = useState(1);
@@ -889,6 +893,7 @@ const ProductsTab = ({ refreshKey = 0 }) => {
     console.log("CLICK AJOUT PRODUIT");
     setForm(emptyForm);
     setFormError("");
+    setIsCustomCat(false);
     setFormModal("new");
   };
 
@@ -899,6 +904,7 @@ const ProductsTab = ({ refreshKey = 0 }) => {
       description: p.description || "", image: p.image || "", stock: p.stock ?? 100,
     });
     setFormError("");
+    setIsCustomCat(!!(p.category) && !CATEGORIES.includes(p.category));
     setFormModal(p);
   };
 
@@ -1155,10 +1161,44 @@ const ProductsTab = ({ refreshKey = 0 }) => {
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "5px" }}>
                   Catégorie<span style={{ color: C.red }}> *</span>
                 </label>
-                <Select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} style={{ width: "100%" }}>
-                  <option value="">Choisir...</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </Select>
+                {!isCustomCat ? (
+                  <Select
+                    value={form.category}
+                    onChange={(e) => {
+                      if (e.target.value === "__new__") {
+                        setIsCustomCat(true);
+                        setForm((p) => ({ ...p, category: "" }));
+                      } else {
+                        setForm((p) => ({ ...p, category: e.target.value }));
+                      }
+                    }}
+                    style={{ width: "100%" }}
+                  >
+                    <option value="">Choisir...</option>
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <option value="__new__">+ Nouvelle catégorie...</option>
+                  </Select>
+                ) : (
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <Input
+                      value={form.category}
+                      onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+                      placeholder="Nom de la catégorie"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setIsCustomCat(false); setForm((p) => ({ ...p, category: "" })); }}
+                      style={{
+                        padding: "0 10px", border: `1px solid ${C.border}`,
+                        borderRadius: "8px", cursor: "pointer", fontSize: "12px",
+                        color: C.muted, background: "#f9fafb", whiteSpace: "nowrap",
+                      }}
+                    >
+                      ← Liste
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             {formError && (
@@ -1198,56 +1238,102 @@ const ProductsTab = ({ refreshKey = 0 }) => {
 // ─────────────────────────────────────────────
 
 const ClientsTab = ({ refreshKey = 0 }) => {
-  const [users, setUsers]             = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [search, setSearch]           = useState("");
+  const { user: currentUser } = useAuth();
+  const [users, setUsers]               = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [search, setSearch]             = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [userOrders, setUserOrders]   = useState([]);
+  const [userOrders, setUserOrders]     = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
-  const [delConfirm, setDelConfirm]   = useState(null);
-  const [toggling, setToggling]       = useState(null);
-  const [page, setPage]               = useState(1);
+  const [delConfirm, setDelConfirm]     = useState(null);
+  const [adminConfirm, setAdminConfirm] = useState(null);
+  const [toggling, setToggling]         = useState(null);
+  const [deletingId, setDeletingId]     = useState(null);
+  const [archiving, setArchiving]       = useState(null);
+  const [page, setPage]                 = useState(1);
 
   const loadUsers = async () => {
-    try { setLoading(true); const data = await adminApi.getUsers(); setUsers(Array.isArray(data) ? data : (data?.users || [])); }
-    catch { setUsers([]); }
-    finally { setLoading(false); }
+    try {
+      setLoading(true);
+      const data = await adminApi.getUsers();
+      setUsers(Array.isArray(data) ? data : (data?.users || []));
+    } catch {
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { loadUsers(); }, [refreshKey]);
 
   const viewOrders = async (user) => {
-    setSelectedUser(user); setLoadingOrders(true);
+    console.log("👁️ CLICK COMMANDES:", user._id, user.fullName);
+    setSelectedUser(user);
+    setLoadingOrders(true);
     try { setUserOrders(await adminApi.getUserOrders(user._id) || []); }
     catch { setUserOrders([]); }
     finally { setLoadingOrders(false); }
   };
 
   const handleToggle = async (userId) => {
+    console.log("🔑 CLICK TOGGLE ADMIN:", userId);
+    setAdminConfirm(null);
     setToggling(userId);
     try {
       const upd = await adminApi.toggleAdminStatus(userId);
       setUsers((prev) => prev.map((u) => u._id === userId ? { ...u, isAdmin: upd.isAdmin } : u));
       toast.success(upd.isAdmin ? "Administrateur assigné" : "Rôle administrateur retiré", { duration: 2000 });
     } catch (e) {
-      toast.error("Erreur lors de la mise à jour", {
-        description: e.message || "Veuillez réessayer.",
-      });
+      toast.error("Erreur lors de la mise à jour", { description: e.message || "Veuillez réessayer." });
     } finally {
       setToggling(null);
     }
   };
 
   const handleDelete = async (userId) => {
+    console.log("🗑️ CLICK SUPPRIMER CLIENT:", userId);
+    if (userId === currentUser?._id) {
+      toast.error("Vous ne pouvez pas supprimer votre propre compte");
+      setDelConfirm(null);
+      return;
+    }
+    const target = users.find((u) => u._id === userId);
+    if (target?.isAdmin && users.filter((u) => u.isAdmin).length <= 1) {
+      toast.error("Impossible de supprimer le dernier administrateur");
+      setDelConfirm(null);
+      return;
+    }
+    setDeletingId(userId);
     try {
       await adminApi.deleteUser(userId);
       setUsers((p) => p.filter((u) => u._id !== userId));
       setDelConfirm(null);
-      toast.success("Compte utilisateur supprimé avec succès", { duration: 2000 });
+      toast.success("Compte supprimé avec succès", { duration: 2000 });
     } catch (e) {
-      toast.error("Erreur lors de la suppression", {
-        description: e.message || "Veuillez réessayer.",
-      });
+      // Si le blocage vient des commandes, afficher le nombre dans la modale
+      const match = e.message?.match(/(\d+) commande/);
+      if (match) {
+        setDelConfirm((prev) => ({ ...prev, orderCount: parseInt(match[1]) }));
+      } else {
+        toast.error("Erreur lors de la suppression", { description: e.message || "Veuillez réessayer." });
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleArchiveAndDelete = async (userId) => {
+    setArchiving(userId);
+    try {
+      await adminApi.archiveUserOrders(userId);
+      await adminApi.deleteUser(userId);
+      setUsers((p) => p.filter((u) => u._id !== userId));
+      setDelConfirm(null);
+      toast.success("Commandes archivées et compte supprimé", { duration: 2000 });
+    } catch (e) {
+      toast.error("Erreur", { description: e.message || "Veuillez réessayer." });
+    } finally {
+      setArchiving(null);
     }
   };
 
@@ -1263,7 +1349,7 @@ const ClientsTab = ({ refreshKey = 0 }) => {
   if (loading) return <div style={{ textAlign: "center", padding: "60px", color: C.muted }}>⏳ Chargement des clients...</div>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px", position: "relative", zIndex: 1 }}>
       <div style={{ background: C.white, borderRadius: "12px", padding: "14px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
         <div style={{ position: "relative" }}>
           <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "14px" }}>🔍</span>
@@ -1288,37 +1374,49 @@ const ClientsTab = ({ refreshKey = 0 }) => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedUsers.map((u, i) => (
-                  <tr key={u._id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? C.white : "#fafafa" }}>
-                    <td style={tdc}>
-                      <p style={{ margin: 0, fontWeight: "700" }}>{u.fullName || "—"}</p>
-                      <p style={{ margin: "2px 0 0", color: C.muted, fontSize: "12px" }}>{u.email}</p>
-                    </td>
-                    <td style={{ ...tdc, color: C.muted }}>{u.phone || "—"}</td>
-                    <td style={{ ...tdc, fontWeight: "700" }}>{u.orderCount || 0}</td>
-                    <td style={{ ...tdc, fontWeight: "700", color: C.green }}>{fmt(u.totalSpent)}</td>
-                    <td style={tdc}>
-                      <span style={{
-                        padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "700",
-                        background: u.isAdmin ? C.purpleLight : "#f3f4f6",
-                        color: u.isAdmin ? C.purple : C.muted,
-                      }}>
-                        {u.isAdmin ? "👑 Admin" : "👤 Client"}
-                      </span>
-                    </td>
-                    <td style={{ ...tdc, color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(u.createdAt)}</td>
-                    <td style={{ ...tdc, textAlign: "center" }}>
-                      <div style={{ display: "flex", gap: "5px", justifyContent: "center", flexWrap: "wrap" }}>
-                        <Btn sm outline color={C.blue} onClick={() => viewOrders(u)}>Commandes</Btn>
-                        <Btn sm outline color={u.isAdmin ? C.yellow : C.purple}
-                          onClick={() => handleToggle(u._id)} disabled={toggling === u._id}>
-                          {u.isAdmin ? "Retirer admin" : "Rendre admin"}
-                        </Btn>
-                        <Btn sm outline color={C.red} onClick={() => setDelConfirm(u)}>✕</Btn>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {paginatedUsers.map((u, i) => {
+                  const isSelf = u._id === currentUser?._id;
+                  return (
+                    <tr key={u._id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? C.white : "#fafafa" }}>
+                      <td style={tdc}>
+                        <p style={{ margin: 0, fontWeight: "700" }}>{u.fullName || "—"}</p>
+                        <p style={{ margin: "2px 0 0", color: C.muted, fontSize: "12px" }}>{u.email}</p>
+                        {isSelf && <span style={{ fontSize: "10px", background: C.primaryLight, color: C.primary, padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>Vous</span>}
+                      </td>
+                      <td style={{ ...tdc, color: C.muted }}>{u.phone || "—"}</td>
+                      <td style={{ ...tdc, fontWeight: "700" }}>{u.orderCount || 0}</td>
+                      <td style={{ ...tdc, fontWeight: "700", color: C.green }}>{fmt(u.totalSpent)}</td>
+                      <td style={tdc}>
+                        <span style={{
+                          padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "700",
+                          background: u.isAdmin ? C.purpleLight : "#f3f4f6",
+                          color: u.isAdmin ? C.purple : C.muted,
+                        }}>
+                          {u.isAdmin ? "👑 Admin" : "👤 Client"}
+                        </span>
+                      </td>
+                      <td style={{ ...tdc, color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(u.createdAt)}</td>
+                      <td style={{ ...tdc, textAlign: "center" }}>
+                        <div style={{ display: "flex", gap: "5px", justifyContent: "center", flexWrap: "wrap" }}>
+                          <Btn sm outline color={C.blue}
+                            onClick={(e) => { e.stopPropagation(); viewOrders(u); }}>
+                            Commandes
+                          </Btn>
+                          <Btn sm outline color={u.isAdmin ? C.yellow : C.purple}
+                            onClick={(e) => { e.stopPropagation(); setAdminConfirm(u); }}
+                            disabled={toggling === u._id || isSelf}>
+                            {toggling === u._id ? "..." : u.isAdmin ? "Retirer admin" : "Rendre admin"}
+                          </Btn>
+                          <Btn sm outline color={C.red}
+                            onClick={(e) => { e.stopPropagation(); setDelConfirm(u); }}
+                            disabled={deletingId === u._id || isSelf}>
+                            {deletingId === u._id ? "..." : "✕"}
+                          </Btn>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1329,7 +1427,32 @@ const ClientsTab = ({ refreshKey = 0 }) => {
         </div>
       )}
 
-      {/* User orders modal */}
+      {/* Confirmation : changer le rôle admin */}
+      {adminConfirm && (
+        <Modal
+          title={adminConfirm.isAdmin ? "Retirer les droits admin" : "Promouvoir en administrateur"}
+          onClose={() => setAdminConfirm(null)}
+        >
+          <p style={{ margin: "0 0 20px", color: C.muted, lineHeight: "1.6" }}>
+            {adminConfirm.isAdmin
+              ? <><strong>{adminConfirm.fullName || adminConfirm.email}</strong> perdra l'accès au tableau de bord. Confirmer ?</>
+              : <><strong>{adminConfirm.fullName || adminConfirm.email}</strong> aura accès à toutes les données administrateur. Confirmer ?</>
+            }
+          </p>
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+            <Btn outline color={C.muted} onClick={() => setAdminConfirm(null)}>Annuler</Btn>
+            <Btn
+              color={adminConfirm.isAdmin ? C.yellow : C.purple}
+              onClick={() => handleToggle(adminConfirm._id)}
+              disabled={toggling === adminConfirm._id}
+            >
+              {toggling === adminConfirm._id ? "Traitement..." : adminConfirm.isAdmin ? "Retirer admin" : "Promouvoir"}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+
+      {/* Commandes du client */}
       {selectedUser && (
         <Modal title={`Commandes — ${selectedUser.fullName || selectedUser.email}`} onClose={() => setSelectedUser(null)} wide>
           {loadingOrders ? (
@@ -1359,18 +1482,49 @@ const ClientsTab = ({ refreshKey = 0 }) => {
         </Modal>
       )}
 
-      {/* Delete confirm */}
+      {/* Confirmation suppression */}
       {delConfirm && (
         <Modal title="Supprimer le compte" onClose={() => setDelConfirm(null)}>
-          <p style={{ margin: "0 0 20px", color: C.muted, lineHeight: "1.6" }}>
-            Êtes-vous sûr de vouloir supprimer le compte de{" "}
-            <strong>{delConfirm.fullName || delConfirm.email}</strong> ?
-            Cette action est <strong>irréversible</strong>.
-          </p>
-          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-            <Btn outline color={C.muted} onClick={() => setDelConfirm(null)}>Annuler</Btn>
-            <Btn color={C.red} onClick={() => handleDelete(delConfirm._id)}>Supprimer</Btn>
-          </div>
+          {delConfirm.orderCount > 0 ? (
+            <>
+              <div style={{
+                background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "8px",
+                padding: "14px 16px", marginBottom: "16px"
+              }}>
+                <p style={{ margin: "0 0 6px", fontWeight: "700", color: "#c2410c", fontSize: "14px" }}>
+                  ⚠️ Commandes existantes
+                </p>
+                <p style={{ margin: 0, color: "#92400e", fontSize: "13px", lineHeight: "1.5" }}>
+                  <strong>{delConfirm.fullName || delConfirm.email}</strong> possède{" "}
+                  <strong>{delConfirm.orderCount} commande(s)</strong>. Pour supprimer ce compte,
+                  vous devez d'abord archiver ses commandes.
+                </p>
+              </div>
+              <p style={{ margin: "0 0 20px", fontSize: "13px", color: C.muted }}>
+                Les commandes archivées ne seront plus visibles dans la liste principale mais resteront conservées dans la base de données.
+              </p>
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <Btn outline color={C.muted} onClick={() => setDelConfirm(null)}>Annuler</Btn>
+                <Btn color={C.yellow} onClick={() => handleArchiveAndDelete(delConfirm._id)} disabled={!!archiving}>
+                  {archiving ? "Archivage en cours..." : `📦 Archiver et supprimer`}
+                </Btn>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: "0 0 20px", color: C.muted, lineHeight: "1.6" }}>
+                Supprimer définitivement le compte de{" "}
+                <strong>{delConfirm.fullName || delConfirm.email}</strong> ?
+                Cette action est <strong>irréversible</strong>.
+              </p>
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <Btn outline color={C.muted} onClick={() => setDelConfirm(null)}>Annuler</Btn>
+                <Btn color={C.red} onClick={() => handleDelete(delConfirm._id)} disabled={!!deletingId}>
+                  {deletingId ? "Vérification..." : "Supprimer définitivement"}
+                </Btn>
+              </div>
+            </>
+          )}
         </Modal>
       )}
     </div>
@@ -1515,7 +1669,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Page content */}
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px", paddingTop: "72px" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px", paddingTop: "90px" }}>
         {error && (
           <div style={{
             padding: "12px 16px", background: C.redLight, border: `1px solid ${C.red}30`,

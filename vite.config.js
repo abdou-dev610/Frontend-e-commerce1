@@ -8,6 +8,10 @@ export default defineConfig({
     port: 5173,
     open: true,
     strictPort: false,
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Pragma": "no-cache",
+    },
     proxy: {
       "/api": {
         target: "http://localhost:5000",

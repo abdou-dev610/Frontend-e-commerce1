@@ -53,24 +53,18 @@ const normalizeProductImage = (product) => {
 
 export const getProducts = async (category = null) => {
   try {
-    // Retourner du cache si disponible et pas expiré
-    if (productsCache && cacheTime && Date.now() - cacheTime < CACHE_DURATION) {
-      if (!category || category === 'Tous') {
-        return productsCache;
-      }
-      return productsCache.filter(p => p.category === category);
-    }
-
-    // Sinon fetcher du backend
-    const products = (await productsApi.getAll(category)).map(normalizeProductImage);
-    
-    // Mettre en cache
-    if (!category || category === 'Tous') {
-      productsCache = products;
+    // S'assurer que tous les produits sont en cache
+    if (!productsCache || !cacheTime || Date.now() - cacheTime >= CACHE_DURATION) {
+      const all = (await productsApi.getAll(null)).map(normalizeProductImage);
+      productsCache = all;
       cacheTime = Date.now();
     }
 
-    return products;
+    // Filtrer côté client — évite tout bug de filtre backend
+    if (!category || category === 'Tous') {
+      return productsCache;
+    }
+    return productsCache.filter(p => p.category === category);
   } catch (error) {
     console.error('Error fetching products:', error);
     throw error;

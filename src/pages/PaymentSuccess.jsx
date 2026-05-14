@@ -78,9 +78,9 @@ const PaymentSuccess = () => {
           console.warn("⚠️ Notification non envoyée:", err.message);
         }
 
-        console.log("✅✅✅ Paiement confirmé avec succès!");
+        console.log("✅✅✅ Commande reçue — en attente de validation admin");
         setStatus("success");
-        setMessage("✅ Commande confirmée! L'administrateur a été notifié.");
+        setMessage("✅ Commande reçue ! L'administrateur va valider votre paiement.");
         clearCart();
 
         // Redirection automatique après 3 secondes
@@ -206,16 +206,16 @@ const PaymentSuccess = () => {
         {/* Message de succès */}
         {status === "success" && (
           <div style={{
-            background: "#e8f5e9",
+            background: "#fff8e1",
             padding: "15px",
             borderRadius: "8px",
             marginBottom: "20px",
-            borderLeft: "4px solid #27ae60"
+            borderLeft: "4px solid #f9a825"
           }}>
-            <p style={{ margin: 0, fontSize: "14px", color: "#2e7d32" }}>
-              ✅ <strong>Commande confirmée automatiquement!</strong>
+            <p style={{ margin: 0, fontSize: "14px", color: "#e65100" }}>
+              ⏳ <strong>Commande reçue — paiement en attente de validation.</strong>
               <br />
-              L'administrateur recevra une notification et traitera votre commande rapidement.
+              L'administrateur vérifiera votre paiement et confirmera la commande sous 24h.
             </p>
           </div>
         )}

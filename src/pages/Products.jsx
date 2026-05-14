@@ -103,7 +103,7 @@ const Products = () => {
         boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
       }}>
         <div style={{ maxWidth: "1300px", margin: "0 auto", padding: "0 clamp(16px, 4vw, 32px)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", overflowX: "auto", padding: "14px 0", scrollbarWidth: "none" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 0" }}>
             {categories.map((cat) => {
               const active = activeCategory === cat;
               const count = cat === "Tous" ? allProducts.length : (productsByCategory[cat]?.length || 0);
@@ -134,7 +134,7 @@ const Products = () => {
 
             {/* Search */}
             {activeCategory !== "Tous" && (
-              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px", background: "#f3f4f6", borderRadius: "50px", padding: "8px 14px", minWidth: "200px", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#f3f4f6", borderRadius: "50px", padding: "8px 14px", minWidth: "200px", flex: "1 1 200px", maxWidth: "300px" }}>
                 <Search size={14} color="#9ca3af" />
                 <input
                   value={search} onChange={e => setSearch(e.target.value)}

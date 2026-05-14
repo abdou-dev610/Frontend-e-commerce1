@@ -111,8 +111,8 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
       data = {};
     }
 
-    // 🔥 Handle 401 - Token expired or invalid
-    if (response.status === 401 && retryCount === 0) {
+    // 🔥 Handle 401 - Token expired or invalid (skip for auth endpoints: wrong credentials ≠ expired token)
+    if (response.status === 401 && retryCount === 0 && !endpoint.startsWith("/auth/")) {
       console.log("⚠️ Token expired, attempting refresh...");
 
       const newToken = await refreshAccessToken();
@@ -310,6 +310,9 @@ export const adminApi = {
 
   toggleAdminStatus: (userId) =>
     apiCall(`/admin/users/${userId}/toggle-admin`, { method: 'PUT' }),
+
+  archiveUserOrders: (userId) =>
+    apiCall(`/admin/users/${userId}/archive-orders`, { method: 'PUT' }),
 
   deleteUser: (userId) =>
     apiCall(`/admin/users/${userId}`, { method: 'DELETE' }),
