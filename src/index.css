@@ -60,6 +60,12 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   body {
@@ -68,5 +74,10 @@
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
   }
 }

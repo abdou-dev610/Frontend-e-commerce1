@@ -19,7 +19,6 @@ const getInitials = (name) => {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 };
 
-// ─── Style de base des boutons du dropdown ──────────────────────────────────
 const itemStyle = {
   display: "flex",
   alignItems: "center",
@@ -42,28 +41,34 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
 
-  const btnRef  = useRef(null); // bouton avatar
-  const portalRef = useRef(null); // div portal
+  const btnRef   = useRef(null);
+  const portalRef = useRef(null);
 
   const navigate  = useNavigate();
   const location  = useLocation();
   const { user, isAdmin, signOut } = useAuth();
   const { itemCount } = useCart();
 
-  // Fermer sur changement de route
   useEffect(() => {
     setDropdownOpen(false);
     setMobileOpen(false);
   }, [location.pathname]);
 
-  // Calculer la position du portal sous le bouton avatar
+  // Fermer mobile menu quand on resize vers desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const calcPos = useCallback(() => {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
     setDropdownPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
   }, []);
 
-  // Repositionner si scroll / resize pendant ouverture
   useEffect(() => {
     if (!dropdownOpen) return;
     const update = () => calcPos();
@@ -75,7 +80,6 @@ const Navbar = () => {
     };
   }, [dropdownOpen, calcPos]);
 
-  // Clic en dehors → fermer
   useEffect(() => {
     const onDown = (e) => {
       if (btnRef.current?.contains(e.target)) return;
@@ -86,16 +90,13 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  // ── Navigation depuis le dropdown (avec log diagnostic) ─────────────────
   const goTo = (path) => {
-    console.log("🔗 NAVIGATE TO:", path);
     setDropdownOpen(false);
     setMobileOpen(false);
     navigate(path);
   };
 
   const handleSignOut = async () => {
-    console.log("🔗 CLICK LOGOUT");
     setDropdownOpen(false);
     setMobileOpen(false);
     localStorage.removeItem("token");
@@ -115,7 +116,6 @@ const Navbar = () => {
     }
   };
 
-  // ── Portal dropdown ──────────────────────────────────────────────────────
   const dropdownPortal = dropdownOpen && user
     ? createPortal(
         <div
@@ -133,57 +133,40 @@ const Navbar = () => {
             overflow: "hidden",
           }}
         >
-          {/* En-tête utilisateur */}
           <div style={{ padding: "12px 16px", borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
             <div style={{ fontWeight: "700", color: "#111827", fontSize: "13px" }}>{user.fullName}</div>
             <div style={{ color: "#6b7280", fontSize: "12px", marginTop: "2px" }}>{user.email}</div>
             {user.phone && <div style={{ color: "#6b7280", fontSize: "12px" }}>{user.phone}</div>}
           </div>
 
-          {/* Mon Compte */}
-          <button
-            type="button"
-            style={{ ...itemStyle, color: "#374151" }}
-            onClick={() => { console.log("CLICK MON COMPTE"); goTo("/mon-compte"); }}
+          <button type="button" style={{ ...itemStyle, color: "#374151" }}
+            onClick={() => goTo("/mon-compte")}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
             👤 Mon Compte
           </button>
 
-          {/* Mes Commandes */}
-          <button
-            type="button"
-            style={{ ...itemStyle, color: "#374151" }}
-            onClick={() => { console.log("CLICK COMMANDES"); goTo("/commandes"); }}
+          <button type="button" style={{ ...itemStyle, color: "#374151" }}
+            onClick={() => goTo("/commandes")}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
             📦 Mes Commandes
           </button>
 
-          {/* Tableau de Bord Admin (si admin) */}
           {isAdmin && (
-            <button
-              type="button"
-              style={{ ...itemStyle, color: "#ea580c", fontWeight: "600" }}
-              onClick={() => { console.log("CLICK ADMIN"); goTo("/admin"); }}
+            <button type="button" style={{ ...itemStyle, color: "#ea580c", fontWeight: "600" }}
+              onClick={() => goTo("/admin")}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#fff7ed")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
               <Shield size={14} />
               Tableau de Bord Admin
             </button>
           )}
 
-          {/* Déconnexion */}
-          <button
-            type="button"
-            style={{ ...itemStyle, color: "#ef4444", borderBottom: "none" }}
+          <button type="button" style={{ ...itemStyle, color: "#ef4444", borderBottom: "none" }}
             onClick={handleSignOut}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
             <LogOut size={14} />
             Déconnexion
           </button>
@@ -194,6 +177,22 @@ const Navbar = () => {
 
   return (
     <>
+      {/* ── Responsive CSS ─────────────────────────────────────────── */}
+      <style>{`
+        /* Desktop : afficher liens + user, masquer hamburger */
+        @media (min-width: 768px) {
+          .nav-desktop-links { display: flex !important; }
+          .nav-user-desktop  { display: flex !important; }
+          .nav-hamburger     { display: none  !important; }
+        }
+        /* Mobile : masquer liens + user desktop, afficher hamburger */
+        @media (max-width: 767px) {
+          .nav-desktop-links { display: none  !important; }
+          .nav-user-desktop  { display: none  !important; }
+          .nav-hamburger     { display: flex  !important; }
+        }
+      `}</style>
+
       <nav
         style={{
           position: "fixed",
@@ -218,7 +217,7 @@ const Navbar = () => {
           {/* ── Logo ──────────────────────────────────── */}
           <Link
             to="/"
-            style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", flexShrink: 0 }}
           >
             <div
               style={{
@@ -251,19 +250,23 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {/* ── Liens desktop ─────────────────────────── */}
-          <div style={{ display: "flex", alignItems: "center", gap: "clamp(16px, 3vw, 40px)" }}>
+          {/* ── Liens desktop (masqués sur mobile) ─── */}
+          <div
+            className="nav-desktop-links"
+            style={{ alignItems: "center", gap: "clamp(16px, 3vw, 40px)" }}
+          >
             {NAV_LINKS.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 end={link.to === "/"}
                 style={({ isActive }) => ({
-                  fontSize: "clamp(12px, 2vw, 14px)",
+                  fontSize: "14px",
                   fontWeight: "600",
                   color: isActive ? "#ea580c" : "#374151",
                   textDecoration: isActive ? "underline" : "none",
                   transition: "color 0.2s",
+                  whiteSpace: "nowrap",
                 })}
               >
                 {link.label}
@@ -271,10 +274,10 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* ── Droite : panier + user + hamburger ─────── */}
+          {/* ── Droite ───────────────────────────────── */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 
-            {/* Panier */}
+            {/* Panier — toujours visible */}
             <Link
               to="/panier"
               style={{
@@ -309,71 +312,75 @@ const Navbar = () => {
               )}
             </Link>
 
-            {/* Avatar / Connexion */}
-            {user ? (
-              <button
-                ref={btnRef}
-                type="button"
-                onClick={toggleDropdown}
-                aria-haspopup="true"
-                aria-expanded={dropdownOpen}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  border: "1px solid #e5e7eb",
-                  background: "white",
-                  cursor: "pointer",
-                  padding: "5px 10px",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: "500",
-                  color: "#374151",
-                }}
-              >
-                <div
+            {/* Avatar / Connexion — masqués sur mobile (dans le menu hamburger) */}
+            <div className="nav-user-desktop">
+              {user ? (
+                <button
+                  ref={btnRef}
+                  type="button"
+                  onClick={toggleDropdown}
+                  aria-haspopup="true"
+                  aria-expanded={dropdownOpen}
                   style={{
-                    width: "28px", height: "28px",
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, #b45309 0%, #f97316 100%)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "white", fontWeight: "bold", fontSize: "12px",
-                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    border: "1px solid #e5e7eb",
+                    background: "white",
+                    cursor: "pointer",
+                    padding: "5px 10px",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
                   }}
                 >
-                  {getInitials(user.fullName)}
-                </div>
-                <span style={{ maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {user.fullName?.split(" ")[0] || user.email}
-                </span>
-                <ChevronDown size={14} color="#9ca3af" />
-              </button>
-            ) : (
-              <Link
-                to="/auth"
-                style={{
-                  fontSize: "13px", fontWeight: "700",
-                  color: "white",
-                  background: "linear-gradient(90deg, #b45309 0%, #f97316 100%)",
-                  padding: "8px 14px",
-                  borderRadius: "6px",
-                  textDecoration: "none",
-                  display: "flex", alignItems: "center", gap: "6px",
-                }}
-              >
-                <User size={14} />
-                Connexion
-              </Link>
-            )}
+                  <div
+                    style={{
+                      width: "28px", height: "28px",
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #b45309 0%, #f97316 100%)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "white", fontWeight: "bold", fontSize: "12px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {getInitials(user.fullName)}
+                  </div>
+                  <span style={{ maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {user.fullName?.split(" ")[0] || user.email}
+                  </span>
+                  <ChevronDown size={14} color="#9ca3af" />
+                </button>
+              ) : (
+                <Link
+                  to="/auth"
+                  style={{
+                    fontSize: "13px", fontWeight: "700",
+                    color: "white",
+                    background: "linear-gradient(90deg, #b45309 0%, #f97316 100%)",
+                    padding: "8px 14px",
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                    display: "flex", alignItems: "center", gap: "6px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <User size={14} />
+                  Connexion
+                </Link>
+              )}
+            </div>
 
-            {/* Hamburger */}
+            {/* Hamburger — visible uniquement sur mobile */}
             <button
               type="button"
+              className="nav-hamburger"
               style={{
                 border: "none", background: "none",
                 cursor: "pointer", color: "#374151",
                 padding: "6px", borderRadius: "6px",
-                display: "flex", alignItems: "center",
+                alignItems: "center",
               }}
               onClick={() => setMobileOpen((v) => !v)}
               aria-label="Menu mobile"
@@ -389,95 +396,101 @@ const Navbar = () => {
             style={{
               backgroundColor: "white",
               borderTop: "1px solid #e5e7eb",
-              padding: "12px 16px",
+              padding: "8px 0 16px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              maxHeight: "calc(100vh - 56px)",
+              overflowY: "auto",
             }}
           >
-            {NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.to === "/"}
-                onClick={() => setMobileOpen(false)}
-                style={({ isActive }) => ({
-                  display: "block",
-                  padding: "11px 8px",
-                  color: isActive ? "#ea580c" : "#374151",
-                  textDecoration: "none",
-                  fontWeight: "500",
-                  fontSize: "15px",
-                  borderBottom: "1px solid #f9fafb",
-                })}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-
-            <Link
-              to="/panier"
-              onClick={() => setMobileOpen(false)}
-              style={{
-                display: "flex", alignItems: "center", gap: "8px",
-                padding: "11px 8px",
-                color: "#374151",
-                textDecoration: "none",
-                fontWeight: "500", fontSize: "15px",
-                borderBottom: "1px solid #f9fafb",
-              }}
-            >
-              <ShoppingCart size={16} />
-              Panier
-              {itemCount > 0 && (
-                <span
-                  style={{
-                    backgroundColor: "#ef4444", color: "white",
-                    borderRadius: "50%", width: "18px", height: "18px",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "10px", fontWeight: "bold",
-                  }}
+            {/* Navigation links */}
+            <div style={{ padding: "0 16px" }}>
+              {NAV_LINKS.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === "/"}
+                  onClick={() => setMobileOpen(false)}
+                  style={({ isActive }) => ({
+                    display: "block",
+                    padding: "13px 8px",
+                    color: isActive ? "#ea580c" : "#374151",
+                    textDecoration: "none",
+                    fontWeight: "600",
+                    fontSize: "15px",
+                    borderBottom: "1px solid #f3f4f6",
+                  })}
                 >
-                  {itemCount}
-                </span>
-              )}
-            </Link>
+                  {link.label}
+                </NavLink>
+              ))}
 
-            <div style={{ borderTop: "1px solid #e5e7eb", marginTop: "8px", paddingTop: "8px" }}>
+              <Link
+                to="/panier"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "10px",
+                  padding: "13px 8px",
+                  color: "#374151",
+                  textDecoration: "none",
+                  fontWeight: "600", fontSize: "15px",
+                  borderBottom: "1px solid #f3f4f6",
+                }}
+              >
+                <ShoppingCart size={18} />
+                Panier
+                {itemCount > 0 && (
+                  <span
+                    style={{
+                      backgroundColor: "#ef4444", color: "white",
+                      borderRadius: "50%", width: "20px", height: "20px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "11px", fontWeight: "bold",
+                    }}
+                  >
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+            </div>
+
+            {/* User section */}
+            <div style={{ padding: "8px 16px 0" }}>
               {user ? (
                 <>
                   <div
                     style={{
-                      display: "flex", alignItems: "center", gap: "10px",
-                      padding: "10px 8px 14px",
+                      display: "flex", alignItems: "center", gap: "12px",
+                      padding: "12px 8px 16px",
                       borderBottom: "1px solid #f3f4f6",
                     }}
                   >
                     <div
                       style={{
-                        width: "36px", height: "36px", borderRadius: "50%",
+                        width: "40px", height: "40px", borderRadius: "50%",
                         background: "linear-gradient(135deg, #b45309 0%, #f97316 100%)",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "white", fontWeight: "bold", fontSize: "14px", flexShrink: 0,
+                        color: "white", fontWeight: "bold", fontSize: "16px", flexShrink: 0,
                       }}
                     >
                       {getInitials(user.fullName)}
                     </div>
-                    <div>
-                      <div style={{ fontWeight: "700", color: "#111827", fontSize: "14px" }}>{user.fullName}</div>
-                      <div style={{ fontSize: "11px", color: "#6b7280" }}>{user.email}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: "700", color: "#111827", fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.fullName}</div>
+                      <div style={{ fontSize: "12px", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
                     </div>
                   </div>
 
                   <button type="button" onClick={() => goTo("/mon-compte")}
-                    style={{ ...itemStyle, color: "#374151", borderBottom: "1px solid #f9fafb", width: "100%" }}>
+                    style={{ ...itemStyle, color: "#374151", borderBottom: "1px solid #f3f4f6", width: "100%" }}>
                     👤 Mon Compte
                   </button>
                   <button type="button" onClick={() => goTo("/commandes")}
-                    style={{ ...itemStyle, color: "#374151", borderBottom: "1px solid #f9fafb", width: "100%" }}>
+                    style={{ ...itemStyle, color: "#374151", borderBottom: "1px solid #f3f4f6", width: "100%" }}>
                     📦 Mes Commandes
                   </button>
                   {isAdmin && (
                     <button type="button" onClick={() => goTo("/admin")}
-                      style={{ ...itemStyle, color: "#ea580c", fontWeight: "600", borderBottom: "1px solid #f9fafb", width: "100%" }}>
+                      style={{ ...itemStyle, color: "#ea580c", fontWeight: "600", borderBottom: "1px solid #f3f4f6", width: "100%" }}>
                       <Shield size={14} /> Tableau de Bord Admin
                     </button>
                   )}
@@ -491,15 +504,16 @@ const Navbar = () => {
                   to="/auth"
                   onClick={() => setMobileOpen(false)}
                   style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-                    padding: "12px",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    padding: "14px",
                     background: "linear-gradient(90deg, #b45309 0%, #f97316 100%)",
-                    color: "white", textDecoration: "none", fontWeight: "600",
-                    borderRadius: "8px", fontSize: "14px",
+                    color: "white", textDecoration: "none", fontWeight: "700",
+                    borderRadius: "10px", fontSize: "15px",
+                    marginTop: "8px",
                   }}
                 >
-                  <User size={14} />
-                  Connexion
+                  <User size={16} />
+                  Se connecter
                 </Link>
               )}
             </div>
@@ -507,7 +521,6 @@ const Navbar = () => {
         )}
       </nav>
 
-      {/* Portal — rendu directement dans document.body, hors de tout contexte CSS parent */}
       {dropdownPortal}
     </>
   );

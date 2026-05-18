@@ -39,11 +39,12 @@ const Contact = () => {
             <MessageCircle size={14} color="#fb923c" />
             <span style={{ fontSize: "11px", fontWeight: "700", color: "#fb923c", textTransform: "uppercase", letterSpacing: "0.1em" }}>Nous Contacter</span>
           </div>
-          <h1 style={{ fontSize: "clamp(30px, 5vw, 52px)", fontWeight: "900", color: "#fff", margin: "0 0 16px", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: "clamp(26px, 5vw, 52px)", fontWeight: "900", color: "#fff", margin: "0 0 16px", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             On est là pour vous 💬
           </h1>
-          <p style={{ fontSize: "clamp(14px, 2vw, 17px)", color: "rgba(255,255,255,0.65)", margin: 0, maxWidth: "600px", marginInline: "auto", fontWeight: "500", lineHeight: 1.7 }}>
-            Une question, une commande sur-mesure ou simplement envie d'échanger ?<br />Contactez-nous via WhatsApp, email ou le formulaire ci-dessous.
+          <p style={{ fontSize: "clamp(13px, 2vw, 17px)", color: "rgba(255,255,255,0.65)", margin: 0, maxWidth: "600px", marginInline: "auto", fontWeight: "500", lineHeight: 1.7 }}>
+            Une question, une commande sur-mesure ou simplement envie d'échanger ?<br className="hidden sm:block" />
+            Contactez-nous via WhatsApp, email ou le formulaire ci-dessous.
           </p>
         </div>
       </div>
@@ -51,49 +52,49 @@ const Contact = () => {
       {/* ── WhatsApp CTA Banner ── */}
       <div style={{ background: "#25d366", padding: "0" }}>
         <a href="https://wa.me/221706242361" target="_blank" rel="noreferrer"
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", padding: "16px 24px", textDecoration: "none", transition: "background 0.2s" }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", padding: "14px 16px", textDecoration: "none", transition: "background 0.2s", flexWrap: "wrap" }}
           onMouseEnter={e => e.currentTarget.style.background = "#1ebe59"}
           onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-          <span style={{ fontSize: "22px" }}>💬</span>
-          <span style={{ fontSize: "15px", fontWeight: "800", color: "#fff" }}>Discuter sur WhatsApp — Réponse en moins de 5 minutes</span>
-          <span style={{ fontSize: "13px", background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 10px", borderRadius: "50px", fontWeight: "700" }}>En ligne</span>
+          <span style={{ fontSize: "20px" }}>💬</span>
+          <span style={{ fontSize: "14px", fontWeight: "800", color: "#fff", textAlign: "center" }}>Discuter sur WhatsApp — Réponse en moins de 5 minutes</span>
+          <span style={{ fontSize: "12px", background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 10px", borderRadius: "50px", fontWeight: "700", whiteSpace: "nowrap" }}>En ligne</span>
         </a>
       </div>
 
       {/* ── Main Grid ── */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "clamp(40px, 6vw, 64px) clamp(16px, 4vw, 32px)" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "clamp(32px, 6vw, 64px) clamp(16px, 4vw, 32px)" }}>
         <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.4fr)", gap: "clamp(24px, 4vw, 48px)", alignItems: "start" }}>
 
           {/* ── Left: Info ── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <div style={{ marginBottom: "8px" }}>
-              <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#111827", margin: "0 0 6px" }}>Nos coordonnées</h2>
+              <h2 style={{ fontSize: "clamp(18px, 3vw, 22px)", fontWeight: "800", color: "#111827", margin: "0 0 6px" }}>Nos coordonnées</h2>
               <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>Plusieurs façons de nous joindre</p>
             </div>
 
             {INFO_ITEMS.map(({ icon: Icon, color, bg, label, value, sub, wa }) => (
               <div key={label}
-                style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "18px", background: "#fff", borderRadius: "14px", border: "1px solid #f0ede8", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", transition: "all 0.25s ease", cursor: wa ? "pointer" : "default" }}
+                style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "16px", background: "#fff", borderRadius: "14px", border: "1px solid #f0ede8", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", transition: "all 0.25s ease", cursor: wa ? "pointer" : "default" }}
                 onClick={() => wa && window.open("https://wa.me/221706242361", "_blank")}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.04)"; }}>
-                <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: bg, border: `1px solid ${color}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Icon size={20} color={color} />
+                <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: bg, border: `1px solid ${color}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon size={18} color={color} />
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: "12px", fontWeight: "700", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 2px" }}>{label}</p>
-                  <p style={{ fontSize: "14px", fontWeight: "700", color: "#111827", margin: "0 0 2px", wordBreak: "break-all" }}>{value}</p>
-                  <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>{sub}</p>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ fontSize: "11px", fontWeight: "700", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 2px" }}>{label}</p>
+                  <p style={{ fontSize: "13px", fontWeight: "700", color: "#111827", margin: "0 0 2px", wordBreak: "break-word", overflowWrap: "anywhere" }}>{value}</p>
+                  <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0 }}>{sub}</p>
                 </div>
                 {wa && <span style={{ marginLeft: "auto", fontSize: "11px", fontWeight: "700", color: "#25d366", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "50px", padding: "3px 10px", flexShrink: 0 }}>Écrire</span>}
               </div>
             ))}
 
             {/* Trust badges */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "8px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "4px" }}>
               {[["🔒", "Paiement sécurisé"], ["🚚", "Livraison rapide"], ["↩️", "Retours faciles"], ["⭐", "4.9/5 clients"]].map(([icon, label]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px", background: "#fff", borderRadius: "10px", border: "1px solid #f0ede8" }}>
-                  <span style={{ fontSize: "18px" }}>{icon}</span>
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px", background: "#fff", borderRadius: "10px", border: "1px solid #f0ede8" }}>
+                  <span style={{ fontSize: "16px" }}>{icon}</span>
                   <span style={{ fontSize: "12px", fontWeight: "600", color: "#374151" }}>{label}</span>
                 </div>
               ))}
@@ -101,10 +102,10 @@ const Contact = () => {
           </div>
 
           {/* ── Right: Form ── */}
-          <div style={{ background: "#fff", borderRadius: "20px", padding: "clamp(24px, 4vw, 40px)", boxShadow: "0 8px 40px rgba(0,0,0,0.08)", border: "1px solid #f0ede8" }}>
-            <div style={{ marginBottom: "28px" }}>
-              <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#111827", margin: "0 0 6px" }}>Envoyer un message</h2>
-              <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>Votre message sera transmis via WhatsApp</p>
+          <div style={{ background: "#fff", borderRadius: "20px", padding: "clamp(20px, 4vw, 40px)", boxShadow: "0 8px 40px rgba(0,0,0,0.08)", border: "1px solid #f0ede8" }}>
+            <div style={{ marginBottom: "24px" }}>
+              <h2 style={{ fontSize: "clamp(18px, 3vw, 22px)", fontWeight: "800", color: "#111827", margin: "0 0 6px" }}>Envoyer un message</h2>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Votre message sera transmis via WhatsApp</p>
             </div>
 
             {sent && (
@@ -114,20 +115,19 @@ const Contact = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-              {/* Name + Phone */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Name + Phone — responsive grid */}
+              <div className="contact-name-phone" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <Field label="Nom complet *" name="name" placeholder="Votre nom" value={form.name} onChange={handleChange} required />
                 <Field label="Téléphone" name="phone" placeholder="+221 XX XXX XX XX" value={form.phone} onChange={handleChange} type="tel" />
               </div>
 
               <Field label="Email" name="email" placeholder="votre@email.com" value={form.email} onChange={handleChange} type="email" />
 
-              {/* Subject select */}
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "700", color: "#374151", marginBottom: "6px" }}>Sujet</label>
                 <select name="subject" value={form.subject} onChange={handleChange}
-                  style={{ width: "100%", padding: "11px 14px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "inherit", background: "#fff", color: form.subject ? "#111827" : "#9ca3af", outline: "none", cursor: "pointer" }}>
+                  style={{ width: "100%", padding: "11px 14px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "inherit", background: "#fff", color: form.subject ? "#111827" : "#9ca3af", outline: "none", cursor: "pointer", boxSizing: "border-box" }}>
                   <option value="">Choisir un sujet...</option>
                   <option value="Commande">Question sur une commande</option>
                   <option value="Produit">Renseignement produit</option>
@@ -137,7 +137,6 @@ const Contact = () => {
                 </select>
               </div>
 
-              {/* Message */}
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "700", color: "#374151", marginBottom: "6px" }}>Message *</label>
                 <textarea name="message" value={form.message} onChange={handleChange} required rows={5} maxLength={1000}
@@ -149,7 +148,7 @@ const Contact = () => {
               </div>
 
               <button type="submit"
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", padding: "14px 24px", background: "linear-gradient(135deg, #ea580c, #f97316)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: "800", fontSize: "15px", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 24px rgba(234,88,12,0.3)", transition: "all 0.3s ease" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", padding: "14px 24px", background: "linear-gradient(135deg, #ea580c, #f97316)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: "800", fontSize: "15px", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 24px rgba(234,88,12,0.3)", transition: "all 0.3s ease", width: "100%" }}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 14px 36px rgba(234,88,12,0.4)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(234,88,12,0.3)"; e.currentTarget.style.transform = "none"; }}>
                 <Send size={18} />
@@ -165,8 +164,13 @@ const Contact = () => {
       </div>
 
       <style>{`
+        /* Grid principal : 1 colonne sur mobile */
         @media (max-width: 768px) {
           .contact-grid { grid-template-columns: 1fr !important; }
+        }
+        /* Grille Nom/Téléphone : 1 colonne sur petit mobile */
+        @media (max-width: 480px) {
+          .contact-name-phone { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

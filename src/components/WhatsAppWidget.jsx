@@ -17,13 +17,11 @@ const WhatsAppWidget = () => {
   const [pulse, setPulse]     = useState(true);
   const [input, setInput]     = useState("");
 
-  // Appear after 2s
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 2000);
     return () => clearTimeout(t);
   }, []);
 
-  // Stop pulse after first open
   useEffect(() => { if (open) setPulse(false); }, [open]);
 
   const send = (msg) => {
@@ -40,19 +38,33 @@ const WhatsAppWidget = () => {
 
   return (
     <>
-      {/* ── Backdrop blur on mobile ── */}
+      {/* Backdrop (mobile uniquement) */}
       {open && (
-        <div onClick={() => setOpen(false)} style={{
-          position: "fixed", inset: 0, zIndex: 9998,
-          background: "rgba(0,0,0,0.25)", backdropFilter: "blur(2px)",
-          display: "none",
-        }} className="wa-backdrop" />
+        <div
+          onClick={() => setOpen(false)}
+          className="wa-backdrop"
+          style={{
+            position: "fixed", inset: 0, zIndex: 9998,
+            background: "rgba(0,0,0,0.3)", backdropFilter: "blur(2px)",
+          }}
+        />
       )}
 
-      <div style={{ position: "fixed", bottom: "28px", right: "28px", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px", pointerEvents: "none" }}>
+      {/* Conteneur principal — responsive via CSS */}
+      <div className="wa-widget-container" style={{
+        position: "fixed",
+        bottom: "24px",
+        right: "20px",
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: "12px",
+        pointerEvents: "none",
+      }}>
 
         {/* ── Chat Panel ── */}
-        <div style={{
+        <div className="wa-chat-panel" style={{
           width: "340px",
           borderRadius: "20px",
           overflow: "hidden",
@@ -70,7 +82,6 @@ const WhatsAppWidget = () => {
             padding: "20px 18px 16px",
             position: "relative",
           }}>
-            {/* Close */}
             <button onClick={() => setOpen(false)} style={{
               position: "absolute", top: "14px", right: "14px",
               background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%",
@@ -83,7 +94,6 @@ const WhatsAppWidget = () => {
             </button>
 
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              {/* Avatar */}
               <div style={{ position: "relative" }}>
                 <div style={{
                   width: "48px", height: "48px", borderRadius: "50%",
@@ -92,7 +102,6 @@ const WhatsAppWidget = () => {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "22px",
                 }}>👗</div>
-                {/* Online dot */}
                 <div style={{
                   position: "absolute", bottom: "1px", right: "1px",
                   width: "12px", height: "12px", borderRadius: "50%",
@@ -122,7 +131,6 @@ const WhatsAppWidget = () => {
               maxWidth: "90%",
               position: "relative",
             }}>
-              {/* Triangle */}
               <div style={{
                 position: "absolute", top: 0, left: "-8px",
                 width: 0, height: 0,
@@ -179,6 +187,7 @@ const WhatsAppWidget = () => {
                 background: "#fff", fontSize: "13px",
                 fontFamily: "inherit", outline: "none",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                minWidth: 0,
               }}
             />
             <button onClick={handleSend} style={{
@@ -196,6 +205,7 @@ const WhatsAppWidget = () => {
 
         {/* ── FAB Button ── */}
         <button
+          className="wa-fab"
           onClick={() => setOpen(o => !o)}
           style={{
             width: "60px", height: "60px",
@@ -210,8 +220,8 @@ const WhatsAppWidget = () => {
           }}
           onMouseEnter={e => { if (!open) { e.currentTarget.style.transform = "scale(1.12)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(212,160,23,0.65)"; } }}
           onMouseLeave={e => { if (!open) { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(212,160,23,0.5)"; } }}
+          aria-label="Ouvrir WhatsApp"
         >
-          {/* Pulse ring */}
           {pulse && !open && (
             <span style={{
               position: "absolute", inset: "-4px", borderRadius: "50%",
@@ -226,7 +236,6 @@ const WhatsAppWidget = () => {
                 style={{ width: "42px", height: "42px", objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.3))" }} />
           }
 
-          {/* Unread badge */}
           {!open && pulse && (
             <span style={{
               position: "absolute", top: "0px", right: "0px",
@@ -245,8 +254,31 @@ const WhatsAppWidget = () => {
           70%  { transform: scale(1.5); opacity: 0; }
           100% { transform: scale(1.5); opacity: 0; }
         }
+
+        /* Mobile : réduire taille + repositionner */
         @media (max-width: 480px) {
-          .wa-backdrop { display: block !important; }
+          .wa-widget-container {
+            bottom: 16px !important;
+            right: 14px !important;
+          }
+          .wa-fab {
+            width: 52px !important;
+            height: 52px !important;
+          }
+          /* Panel : largeur dynamique pour ne jamais dépasser l'écran */
+          .wa-chat-panel {
+            width: min(320px, calc(100vw - 32px)) !important;
+          }
+          /* Backdrop actif sur mobile */
+          .wa-backdrop {
+            display: block;
+          }
+        }
+
+        @media (min-width: 481px) {
+          .wa-backdrop {
+            display: none !important;
+          }
         }
       `}</style>
     </>

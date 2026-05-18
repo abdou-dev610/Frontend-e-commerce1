@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, Package } from "lucide-react";
+import { Search, Package } from "lucide-react";
 import ProductGridCard from "@/components/ProductGridCard";
 import CategoryCard from "@/components/CategoryCard";
 import { getProducts, getCategories } from "@/services/productService";
@@ -84,10 +84,10 @@ const Products = () => {
             <Package size={14} color="#fb923c" />
             <span style={{ fontSize: "11px", fontWeight: "700", color: "#fb923c", textTransform: "uppercase", letterSpacing: "0.1em" }}>Notre Catalogue</span>
           </div>
-          <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: "900", color: "#fff", margin: "0 0 10px", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: "clamp(24px, 5vw, 48px)", fontWeight: "900", color: "#fff", margin: "0 0 10px", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             {activeCategory === "Tous" ? "Tous nos Produits" : activeCategory}
           </h1>
-          <p style={{ fontSize: "clamp(14px, 2vw, 16px)", color: "rgba(255,255,255,0.65)", margin: 0, fontWeight: "500" }}>
+          <p style={{ fontSize: "clamp(13px, 2vw, 16px)", color: "rgba(255,255,255,0.65)", margin: 0, fontWeight: "500" }}>
             {activeCategory === "Tous"
               ? `${allProducts.length} articles disponibles dans ${categories.length - 1} catégories`
               : `${products.length} article${products.length > 1 ? "s" : ""} dans la catégorie ${activeCategory}`}
@@ -97,26 +97,29 @@ const Products = () => {
 
       {/* ── Sticky Filter Bar ── */}
       <div style={{
-        position: "sticky", top: "64px", zIndex: 20,
-        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+        position: "sticky", top: "56px", zIndex: 20,
+        background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(0,0,0,0.07)",
         boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
       }}>
-        <div style={{ maxWidth: "1300px", margin: "0 auto", padding: "0 clamp(16px, 4vw, 32px)" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 0" }}>
+        <div style={{ maxWidth: "1300px", margin: "0 auto", padding: "0 clamp(12px, 4vw, 32px)" }}>
+          {/* Catégories : scroll horizontal sur mobile */}
+          <div
+            className="products-filter-bar"
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 0" }}
+          >
             {categories.map((cat) => {
               const active = activeCategory === cat;
               const count = cat === "Tous" ? allProducts.length : (productsByCategory[cat]?.length || 0);
               return (
                 <button key={cat} onClick={() => setActiveCategory(cat)} style={{
-                  display: "flex", alignItems: "center", gap: "6px",
-                  padding: "8px 16px", borderRadius: "50px", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "5px",
+                  padding: "7px 14px", borderRadius: "50px", border: "none", cursor: "pointer",
                   whiteSpace: "nowrap", fontFamily: "inherit", fontWeight: "700",
-                  fontSize: "13px", transition: "all 0.25s ease",
+                  fontSize: "13px", transition: "all 0.25s ease", flexShrink: 0,
                   background: active ? "linear-gradient(135deg, #ea580c, #f97316)" : "#f3f4f6",
                   color: active ? "#fff" : "#4b5563",
                   boxShadow: active ? "0 4px 16px rgba(234,88,12,0.35)" : "none",
-                  transform: active ? "translateY(-1px)" : "none",
                 }}
                   onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#e9eaec"; }}
                   onMouseLeave={e => { if (!active) e.currentTarget.style.background = "#f3f4f6"; }}
@@ -124,17 +127,19 @@ const Products = () => {
                   <span>{CATEGORY_ICONS[cat] || "🏷️"}</span>
                   {cat}
                   <span style={{
-                    fontSize: "10px", fontWeight: "800", padding: "1px 6px", borderRadius: "50px",
+                    fontSize: "10px", fontWeight: "800", padding: "1px 5px", borderRadius: "50px",
                     background: active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)",
                     color: active ? "#fff" : "#6b7280",
                   }}>{count}</span>
                 </button>
               );
             })}
+          </div>
 
-            {/* Search */}
-            {activeCategory !== "Tous" && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#f3f4f6", borderRadius: "50px", padding: "8px 14px", minWidth: "200px", flex: "1 1 200px", maxWidth: "300px" }}>
+          {/* Search — en dessous sur mobile */}
+          {activeCategory !== "Tous" && (
+            <div style={{ paddingBottom: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#f3f4f6", borderRadius: "50px", padding: "8px 14px", maxWidth: "300px" }}>
                 <Search size={14} color="#9ca3af" />
                 <input
                   value={search} onChange={e => setSearch(e.target.value)}
@@ -142,17 +147,17 @@ const Products = () => {
                   style={{ border: "none", background: "transparent", fontSize: "13px", fontFamily: "inherit", outline: "none", color: "#374151", width: "100%" }}
                 />
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ── Content ── */}
-      <div style={{ maxWidth: "1300px", margin: "0 auto", padding: "clamp(24px, 5vw, 40px) clamp(16px, 4vw, 32px)" }}>
+      <div style={{ maxWidth: "1300px", margin: "0 auto", padding: "clamp(20px, 5vw, 40px) clamp(12px, 4vw, 32px)" }}>
 
         {/* Loading */}
         {loading && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "20px" }}>
+          <div className="products-grid-loading">
             {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
@@ -169,7 +174,7 @@ const Products = () => {
           <>
             {/* All categories view */}
             {activeCategory === "Tous" && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "28px" }}>
+              <div className="products-categories-grid">
                 {categories.filter(cat => cat !== "Tous").map((cat, i) => (
                   productsByCategory[cat] && (
                     <div key={cat} style={{ animation: "fadeUp 0.5s ease forwards", animationDelay: `${i * 0.06}s`, opacity: 0 }}>
@@ -188,7 +193,7 @@ const Products = () => {
                     {filtered.length} résultat{filtered.length > 1 ? "s" : ""} pour «&nbsp;{search}&nbsp;»
                   </p>
                 )}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "20px" }}>
+                <div className="products-category-grid">
                   {filtered.map((product, i) => (
                     <div key={product._id || product.id} style={{ animation: "fadeUp 0.4s ease forwards", animationDelay: `${i * 0.03}s`, opacity: 0 }}>
                       <ProductGridCard product={product} disableNavigation />
@@ -200,12 +205,12 @@ const Products = () => {
 
             {/* Empty */}
             {activeCategory !== "Tous" && filtered.length === 0 && (
-              <div style={{ textAlign: "center", padding: "100px 32px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+              <div style={{ textAlign: "center", padding: "80px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
                 <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px" }}>🔍</div>
                 <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", margin: 0 }}>
                   {search ? "Aucun résultat" : "Aucun produit"}
                 </h3>
-                <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
+                <p style={{ fontSize: "14px", color: "#6b7280", margin: 0, textAlign: "center" }}>
                   {search ? `Aucun produit ne correspond à « ${search} »` : "Cette catégorie est vide pour le moment."}
                 </p>
                 {search && (
@@ -228,7 +233,67 @@ const Products = () => {
           0%   { background-position: -200% 0; }
           100% { background-position:  200% 0; }
         }
-        ::-webkit-scrollbar { display: none; }
+
+        /* ── Filtre bar : scroll horizontal sur mobile ─── */
+        .products-filter-bar {
+          overflow-x: auto;
+          flex-wrap: nowrap;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          padding-bottom: 4px;
+        }
+        .products-filter-bar::-webkit-scrollbar { display: none; }
+
+        /* ── Grille loading skeleton ───────────────────── */
+        .products-grid-loading {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        @media (min-width: 640px) {
+          .products-grid-loading { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        }
+        @media (min-width: 768px) {
+          .products-grid-loading { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        }
+        @media (min-width: 1024px) {
+          .products-grid-loading { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        }
+
+        /* ── Grille catégories "Tous" ──────────────────── */
+        .products-categories-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        @media (min-width: 480px) {
+          .products-categories-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        }
+        @media (min-width: 1024px) {
+          .products-categories-grid { grid-template-columns: repeat(3, 1fr); gap: 28px; }
+        }
+        @media (min-width: 1280px) {
+          .products-categories-grid { grid-template-columns: repeat(4, 1fr); gap: 28px; }
+        }
+
+        /* ── Grille produits par catégorie ─────────────── */
+        .products-category-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        @media (min-width: 640px) {
+          .products-category-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        }
+        @media (min-width: 768px) {
+          .products-category-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        }
+        @media (min-width: 1024px) {
+          .products-category-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        }
+        @media (min-width: 1280px) {
+          .products-category-grid { grid-template-columns: repeat(5, 1fr); gap: 20px; }
+        }
       `}</style>
     </div>
   );
