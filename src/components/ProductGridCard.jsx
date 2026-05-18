@@ -18,7 +18,7 @@ const ProductGridCard = ({ product, disableNavigation = false }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
-  const primaryImage = product.images?.[0] || product.image || "/images/no-image.png";
+  const primaryImage = product.images?.[0] || product.image || null;
   const productId = String(product._id || product.id);
 
   useEffect(() => {
@@ -176,7 +176,6 @@ const ProductGridCard = ({ product, disableNavigation = false }) => {
         <SafeImage
           src={primaryImage}
           alt={product.name}
-          fallbackSrc="/images/no-image.png"
           loading="lazy"
           className="max-w-full max-h-full object-contain transition-transform duration-300 hover:scale-105"
         />

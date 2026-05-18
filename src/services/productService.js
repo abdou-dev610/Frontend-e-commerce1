@@ -1,18 +1,11 @@
-// Service Products - Stocke les produits du backend
 import { productsApi } from "@/integrations/api/client";
+import { products as staticProducts, categories as staticCategories } from "@/data/products.js";
 
-// Stockage en cache pour éviter trop d'appels API
 let productsCache = null;
 let categoriesCache = null;
 let cacheTime = null;
 let cacheTimeCategories = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-const LOCAL_IMAGE_OVERRIDES = {
-  l1: "/images/Lacostes/lacoste1.jpeg",
-  l2: "/images/Lacostes/lacoste2.jpeg",
-  a1: "/images/Abaya/abaya1.jpeg",
-};
 
 const normalizeImagePath = (value) => {
   if (typeof value !== "string") return value;
@@ -32,64 +25,58 @@ const normalizeImagePath = (value) => {
 };
 
 const normalizeProductImage = (product) => {
-  const localImage = LOCAL_IMAGE_OVERRIDES[product?.id];
-  const normalizedImage = normalizeImagePath(localImage || product?.image);
+  const normalizedImage = normalizeImagePath(product?.image);
   const normalizedImages = Array.isArray(product?.images)
     ? product.images.map(normalizeImagePath)
     : [];
-
-  if (!localImage && !normalizedImage && normalizedImages.length === 0) return product;
 
   return {
     ...product,
     image: normalizedImage,
     images: normalizedImages.length > 0
-      ? [normalizedImage || normalizedImages[0], ...normalizedImages.slice(1)]
+      ? normalizedImages
       : normalizedImage
         ? [normalizedImage]
         : [],
   };
 };
 
+// Static products normalized once at module load (no async needed)
+const normalizedStatic = staticProducts.map(p => normalizeProductImage({ ...p, available: true }));
+
 export const getProducts = async (category = null) => {
   try {
-    // S'assurer que tous les produits sont en cache
     if (!productsCache || !cacheTime || Date.now() - cacheTime >= CACHE_DURATION) {
       const all = (await productsApi.getAll(null)).map(normalizeProductImage);
       productsCache = all;
       cacheTime = Date.now();
     }
 
-    // Filtrer côté client — évite tout bug de filtre backend
     if (!category || category === 'Tous') {
       return productsCache;
     }
     return productsCache.filter(p => p.category === category);
   } catch (error) {
-    console.error('Error fetching products:', error);
-    throw error;
+    // Render free tier may be sleeping — fall back to local static products so images always display
+    console.warn('API indisponible, affichage des produits statiques:', error.message);
+    if (!category || category === 'Tous') return normalizedStatic;
+    return normalizedStatic.filter(p => p.category === category);
   }
 };
 
 export const getCategories = async () => {
   try {
-    // Retourner du cache si disponible et pas expiré
     if (categoriesCache && cacheTimeCategories && Date.now() - cacheTimeCategories < CACHE_DURATION) {
       return categoriesCache;
     }
 
-    // Sinon fetcher du backend
     const categories = await productsApi.getCategories();
-    
-    // Mettre en cache
     categoriesCache = categories;
     cacheTimeCategories = Date.now();
-
     return categories;
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    // Return default categories if API fails
-    return ['Tous', 'Vêtements', 'Accessoires'];
+    console.warn('Catégories indisponibles, utilisation des catégories statiques:', error.message);
+    return staticCategories.filter(c => c !== 'Tous');
   }
 };
 
@@ -97,7 +84,9 @@ export const getProductById = async (id) => {
   try {
     return normalizeProductImage(await productsApi.getById(id));
   } catch (error) {
-    console.error('Error fetching product:', error);
+    // If API fails, try to find product in static catalog
+    const found = normalizedStatic.find(p => p.id === id || p._id === id);
+    if (found) return found;
     throw error;
   }
 };
