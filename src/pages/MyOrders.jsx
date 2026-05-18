@@ -57,8 +57,8 @@ export default function MyOrders() {
       case 'traitement':
         return { bg: '#dbeafe', text: '#1e40af' };
       case 'completed':
+      case 'delivered':
       case 'livré':
-      case 'completed':
         return { bg: '#dcfce7', text: '#166534' };
       case 'cancelled':
       case 'annulé':

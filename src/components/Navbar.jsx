@@ -26,7 +26,6 @@ const itemStyle = {
   gap: "8px",
   width: "100%",
   padding: "11px 16px",
-  borderBottom: "1px solid #f3f4f6",
   background: "transparent",
   border: "none",
   borderBottom: "1px solid #f3f4f6",

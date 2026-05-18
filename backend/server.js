@@ -41,12 +41,22 @@ const MAX_PORT_ATTEMPTS = 10;
 
 // Middleware
 const DEV_ORIGINS = ['http://localhost:8080','http://localhost:8081','http://localhost:8082','http://localhost:5173','http://localhost:3000'];
-const PROD_ORIGINS = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [];
-const allowedOrigins = [...DEV_ORIGINS, ...PROD_ORIGINS];
+const EXTRA_ORIGINS = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [];
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (DEV_ORIGINS.includes(origin)) return true;
+  if (EXTRA_ORIGINS.includes(origin)) return true;
+  // Autoriser tous les sous-domaines Vercel et Render
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/.test(origin)) return true;
+  return false;
+};
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (isOriginAllowed(origin)) return callback(null, true);
+    console.warn(`⚠️  CORS bloqué pour: ${origin}`);
     callback(new Error(`CORS: origine non autorisée — ${origin}`));
   },
   credentials: true
