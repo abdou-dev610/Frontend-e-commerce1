@@ -109,7 +109,7 @@ const Footer = () => (
         <div>
           <h4 style={{ fontWeight: "bold", fontSize: "15px", marginBottom: "28px", color: "#fbbf24", letterSpacing: "0.08em", textTransform: "uppercase" }}>Catégories</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            {["Lacostes", "Chaussures", "Abayas", "Qamis", "Pullovers"].map((cat) => (
+            {["Lacostes", "Abayas", "Qamis", "Pullovers"].map((cat) => (
               <Link
                 key={cat}
                 to={`/produits?cat=${encodeURIComponent(cat)}`}

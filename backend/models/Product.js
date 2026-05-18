@@ -12,7 +12,7 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['Lacostes', 'Chaussures', 'Abayas', 'Qamis', 'Pullovers', 'Pantalons', 'Ensembles']
+    enum: ['Lacostes', 'Abayas', 'Qamis', 'Pullovers', 'Pantalons', 'Ensembles']
   },
   description: String,
   image: {
@@ -23,6 +23,10 @@ const productSchema = new mongoose.Schema({
   stock: {
     type: Number,
     default: 100
+  },
+  available: {
+    type: Boolean,
+    default: true
   },
   rating: {
     type: Number,
@@ -48,5 +52,7 @@ const productSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+productSchema.index({ name: 'text', description: 'text', category: 'text' });
 
 export default mongoose.model('Product', productSchema);

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -19,6 +20,12 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationToken: String,
+  verificationTokenExpiry: Date,
   createdAt: {
     type: Date,
     default: Date.now
@@ -43,6 +50,13 @@ userSchema.methods.comparePassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+userSchema.methods.generateVerificationToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.verificationToken = token;
+  this.verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  return token;
+};
+
 // Méthode: Retourner les données publiques (sans password)
 userSchema.methods.toPublic = function() {
   return {
@@ -50,7 +64,8 @@ userSchema.methods.toPublic = function() {
     email: this.email,
     fullName: this.fullName,
     phone: this.phone,
-    isAdmin: this.isAdmin
+    isAdmin: this.isAdmin,
+    emailVerified: this.emailVerified
   };
 };
 

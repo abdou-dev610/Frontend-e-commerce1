@@ -3,7 +3,7 @@ import { Phone, Mail, MapPin, MessageCircle, Clock, Send, CheckCircle } from "lu
 
 const INFO_ITEMS = [
   { icon: Phone,         color: "#22c55e", bg: "#f0fdf4", label: "Téléphone",    value: "+221 76 204 81 19",                   sub: "Disponible tous les jours" },
-  { icon: MessageCircle, color: "#25d366", bg: "#f0fdf4", label: "WhatsApp",     value: "wa.me/221762048119",                  sub: "Réponse rapide garantie", wa: true },
+  { icon: MessageCircle, color: "#25d366", bg: "#f0fdf4", label: "WhatsApp",     value: "wa.me/221706242361",                  sub: "Réponse rapide garantie", wa: true },
   { icon: Mail,          color: "#3b82f6", bg: "#eff6ff", label: "Email",        value: "ndiayeabdoumamesaye1234@gmail.com",   sub: "Réponse sous 24h" },
   { icon: MapPin,        color: "#ea580c", bg: "#fff7ed", label: "Adresse",      value: "Dakar, Sénégal",                      sub: "Livraison partout au Sénégal" },
   { icon: Clock,         color: "#8b5cf6", bg: "#f5f3ff", label: "Horaires",     value: "Lun – Sam : 08h00 – 20h00",           sub: "Dimanche : 10h00 – 18h00" },
@@ -18,7 +18,7 @@ const Contact = () => {
   const handleSubmit = e => {
     e.preventDefault();
     const text = `Bonjour, je suis ${form.name}.${form.subject ? ` Sujet : ${form.subject}.` : ""} ${form.message}${form.email ? ` (Email : ${form.email})` : ""}${form.phone ? ` (Tél : ${form.phone})` : ""}`;
-    window.open(`https://wa.me/221762048119?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`https://wa.me/221706242361?text=${encodeURIComponent(text)}`, "_blank");
     setSent(true);
     setTimeout(() => setSent(false), 4000);
   };
@@ -50,7 +50,7 @@ const Contact = () => {
 
       {/* ── WhatsApp CTA Banner ── */}
       <div style={{ background: "#25d366", padding: "0" }}>
-        <a href="https://wa.me/221762048119" target="_blank" rel="noreferrer"
+        <a href="https://wa.me/221706242361" target="_blank" rel="noreferrer"
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", padding: "16px 24px", textDecoration: "none", transition: "background 0.2s" }}
           onMouseEnter={e => e.currentTarget.style.background = "#1ebe59"}
           onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -74,7 +74,7 @@ const Contact = () => {
             {INFO_ITEMS.map(({ icon: Icon, color, bg, label, value, sub, wa }) => (
               <div key={label}
                 style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "18px", background: "#fff", borderRadius: "14px", border: "1px solid #f0ede8", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", transition: "all 0.25s ease", cursor: wa ? "pointer" : "default" }}
-                onClick={() => wa && window.open("https://wa.me/221762048119", "_blank")}
+                onClick={() => wa && window.open("https://wa.me/221706242361", "_blank")}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.04)"; }}>
                 <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: bg, border: `1px solid ${color}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

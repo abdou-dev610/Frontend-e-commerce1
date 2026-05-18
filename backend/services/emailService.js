@@ -545,11 +545,52 @@ export const testEmailConnection = async () => {
   }
 };
 
+export const sendVerificationEmail = async ({ email, fullName, verifyUrl }) => {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family:Arial,sans-serif;background:#f8f7f4;padding:20px">
+          <div style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden">
+            <div style="background:linear-gradient(135deg,#1a0a00,#7c3a10);padding:30px;text-align:center">
+              <h1 style="color:white;margin:0;font-size:22px">🛍️ Chic Senegal Style</h1>
+            </div>
+            <div style="padding:32px">
+              <h2 style="color:#1f2937">Vérifiez votre adresse email</h2>
+              <p style="color:#4b5563">Bonjour <strong>${fullName || 'cher client'}</strong>,</p>
+              <p style="color:#4b5563">Merci de vous être inscrit. Cliquez sur le bouton ci-dessous pour vérifier votre email :</p>
+              <div style="text-align:center;margin:32px 0">
+                <a href="${verifyUrl}" style="background:linear-gradient(90deg,#b45309,#f97316);color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px">
+                  ✅ Vérifier mon email
+                </a>
+              </div>
+              <p style="color:#6b7280;font-size:13px">Ce lien expire dans <strong>24 heures</strong>. Si vous n'avez pas créé de compte, ignorez cet email.</p>
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+              <p style="color:#9ca3af;font-size:12px;text-align:center">© 2026 Chic Senegal Style</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    await transporter.sendMail({
+      from: process.env.ADMIN_EMAIL,
+      to: email,
+      subject: '✅ Vérifiez votre email - Chic Senegal Style',
+      html
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Erreur email vérification:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   sendCustomerConfirmationEmail,
   sendAdminNotificationEmail,
   sendOrderStatusUpdateEmail,
   sendWelcomeEmail,
+  sendVerificationEmail,
   testEmailConnection
 };
 

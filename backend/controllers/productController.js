@@ -1,4 +1,6 @@
 import Product from '../models/Product.js';
+import UnavailableProduct from '../models/UnavailableProduct.js';
+import ExcludedProduct from '../models/ExcludedProduct.js';
 import { products as productsData } from '../data/products.js';
 import mongoose from 'mongoose';
 
@@ -6,16 +8,21 @@ export const getProducts = async (req, res) => {
   try {
     const { category } = req.query;
 
-    // Fusionner catalogue local + produits MongoDB
-    const dbProducts = await Product.find().sort({ createdAt: -1 }).lean();
+    const [dbProducts, excluded, unavailable] = await Promise.all([
+      Product.find().sort({ createdAt: -1 }).lean(),
+      ExcludedProduct.find().lean(),
+      UnavailableProduct.find().lean(),
+    ]);
+    const excludedIds    = new Set(excluded.map(e => e.staticId));
+    const unavailableIds = new Set(unavailable.map(u => u.staticId));
 
-    // Normaliser les produits MongoDB pour qu'ils aient le même format que le catalogue local
-    const normalizedDbProducts = dbProducts.map(p => ({
-      ...p,
-      id: p._id.toString(),
-    }));
+    const normalizedDbProducts = dbProducts.map(p => ({ ...p, id: p._id.toString() }));
 
-    const merged = [...normalizedDbProducts, ...productsData];
+    const normalizedStatic = productsData
+      .filter(p => !EXCLUDED_CATEGORIES.includes(p.category) && !excludedIds.has(p.id))
+      .map(p => ({ ...p, available: !unavailableIds.has(p.id) }));
+
+    const merged = [...normalizedDbProducts, ...normalizedStatic];
 
     const filtered = category && category !== 'Tous'
       ? merged.filter(p => p.category === category)
@@ -128,11 +135,53 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
+const EXCLUDED_CATEGORIES = ['Chaussures'];
+
+export const searchProducts = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({ message: 'Requête de recherche trop courte (min 2 caractères)' });
+    }
+
+    const [excluded, unavailable] = await Promise.all([
+      ExcludedProduct.find().lean(),
+      UnavailableProduct.find().lean(),
+    ]);
+    const excludedIds = new Set(excluded.map(e => e.staticId));
+    const unavailableIds = new Set(unavailable.map(u => u.staticId));
+
+    const dbResults = await Product.find(
+      { $text: { $search: q } },
+      { score: { $meta: 'textScore' } }
+    ).sort({ score: { $meta: 'textScore' } }).lean();
+
+    const normalizedDb = dbResults.map(p => ({ ...p, id: p._id.toString() }));
+
+    const lowerQ = q.toLowerCase();
+    const staticResults = productsData
+      .filter(p =>
+        !EXCLUDED_CATEGORIES.includes(p.category) &&
+        !excludedIds.has(p.id) &&
+        (p.name.toLowerCase().includes(lowerQ) || p.description?.toLowerCase().includes(lowerQ) || p.category.toLowerCase().includes(lowerQ))
+      )
+      .map(p => ({ ...p, available: !unavailableIds.has(p.id) }));
+
+    const merged = [...normalizedDb, ...staticResults];
+    return res.json(merged);
+  } catch (error) {
+    console.error('Search Products Error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 export const getCategories = async (req, res) => {
   try {
     const dbCategories = await Product.distinct('category');
     const localCategories = productsData.map(p => p.category);
-    const all = [...new Set([...dbCategories, ...localCategories])].sort();
+    const all = [...new Set([...dbCategories, ...localCategories])]
+      .filter(c => !EXCLUDED_CATEGORIES.includes(c))
+      .sort();
     return res.json(all);
   } catch (error) {
     console.error('Get Categories Error:', error);

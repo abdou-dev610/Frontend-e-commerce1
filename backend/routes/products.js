@@ -5,7 +5,8 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  getCategories
+  getCategories,
+  searchProducts
 } from '../controllers/productController.js';
 import { verifyToken, verifyAdmin } from '../middleware/auth.js';
 
@@ -14,6 +15,7 @@ const router = express.Router();
 // Public routes
 router.get('/', getProducts);
 router.get('/categories', getCategories);
+router.get('/search', searchProducts);
 router.get('/:id', getProductById);
 
 // Admin routes

@@ -12,11 +12,19 @@ const Cart = () => {
   const { user } = useAuth();
 
   const whatsAppOrderMessage = () => {
+    const origin = window.location.origin;
     const productList = items
-      .map((i) => `• ${i.product.name} x${i.quantity} — ${formatPrice(i.product.price * i.quantity)}`)
-      .join("\n");
-    const msg = `Bonjour, je souhaite commander :\n\n${productList}\n\nTotal : ${formatPrice(total)}\n\nMerci !`;
-    return `https://wa.me/221762048119?text=${encodeURIComponent(msg)}`;
+      .map((i) => {
+        const img = i.product.image;
+        const imageUrl = img
+          ? (img.startsWith("http") ? img : `${origin}${img}`)
+          : null;
+        const line = `• ${i.product.name} x${i.quantity} — ${formatPrice(i.product.price * i.quantity)}`;
+        return imageUrl ? `${line}\n  🖼️ ${imageUrl}` : line;
+      })
+      .join("\n\n");
+    const msg = `Bonjour, je souhaite commander :\n\n${productList}\n\n💰 Total : ${formatPrice(total)}\n\nMerci !`;
+    return `https://wa.me/221706242361?text=${encodeURIComponent(msg)}`;
   };
 
   if (items.length === 0) {

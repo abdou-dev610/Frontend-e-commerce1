@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { ordersApi, productsApi, adminApi, uploadImage } from "@/integrations/api/client";
+import { ordersApi, productsApi, adminApi, paymentApi, uploadImage } from "@/integrations/api/client";
 import { toast } from "sonner";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
@@ -53,12 +53,13 @@ const ORDER_STATUS = {
 };
 
 const PAY_STATUS = {
-  pending:   { label: "En attente", color: C.yellow, bg: C.yellowLight },
-  completed: { label: "Confirmé",   color: C.green,  bg: C.greenLight  },
-  failed:    { label: "Échoué",     color: C.red,    bg: C.redLight    },
+  pending:   { label: "En attente", color: C.yellow,  bg: C.yellowLight },
+  completed: { label: "Confirmé",   color: C.green,   bg: C.greenLight  },
+  failed:    { label: "Échoué",     color: C.red,     bg: C.redLight    },
+  cancelled: { label: "Annulé",     color: C.purple,  bg: "#f3e8ff"     },
 };
 
-const CATEGORIES = ["Lacostes","Chaussures","Abayas","Qamis","Pullovers","Pantalons","Ensembles"];
+const CATEGORIES = ["Lacostes","Abayas","Qamis","Pullovers","Pantalons","Ensembles"];
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -630,6 +631,7 @@ const OrdersTab = ({ orders, onStatusUpdate, loading }) => {
           <option value="pending">En attente</option>
           <option value="completed">Confirmé</option>
           <option value="failed">Échoué</option>
+          <option value="cancelled">Annulé</option>
         </Select>
         <Select value={filters.method} onChange={(e) => setFilters((f) => ({ ...f, method: e.target.value }))}>
           <option value="all">Toute méthode</option>
@@ -922,6 +924,9 @@ const ProductsTab = ({ refreshKey = 0 }) => {
       if (formModal === "new") {
         await productsApi.create(payload);
         toast.success("Produit créé avec succès");
+      } else if (formModal.source === "static") {
+        await adminApi.updateStaticProduct(formModal._id, payload);
+        toast.success("Produit modifié avec succès");
       } else {
         await productsApi.update(formModal._id, payload);
         toast.success("Produit mis à jour avec succès");
@@ -950,16 +955,17 @@ const ProductsTab = ({ refreshKey = 0 }) => {
   };
 
   const handleDelete = async (id) => {
-    console.log("CLICK SUPPRIMER PRODUIT", id);
+    const product = products.find(p => p._id === id || p.id === id);
     try {
-      if (!isLocalMode) {
+      if (product?.source === "static") {
+        await adminApi.deleteStaticProduct(id);
+      } else if (!isLocalMode) {
         await productsApi.delete(id);
-        toast.success("Produit supprimé avec succès", { duration: 2000 });
       } else {
         throw new Error("local");
       }
+      toast.success("Produit supprimé avec succès", { duration: 2000 });
     } catch {
-      // Fallback localStorage
       localDB.delete(id);
       setIsLocalMode(true);
       toast.success("Produit supprimé (stockage local)", { duration: 2000 });
@@ -1069,9 +1075,28 @@ const ProductsTab = ({ refreshKey = 0 }) => {
                       </span>
                     </td>
                     <td style={{ padding: "11px 14px", textAlign: "center" }}>
-                      <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
                         <Btn sm outline color={C.blue} onClick={() => openEdit(p)}>Modifier</Btn>
                         <Btn sm outline color={C.red} onClick={() => setDelConfirm(p)}>Supprimer</Btn>
+                        <button
+                          onClick={async () => {
+                            const newAvail = p.available === false ? true : false;
+                            try {
+                              await adminApi.toggleAvailability(p._id || p.id, p.source || 'db', newAvail);
+                              toast.success(newAvail ? "Produit remis en stock" : "Produit marqué indisponible");
+                              load();
+                            } catch { toast.error("Erreur lors de la mise à jour"); }
+                          }}
+                          style={{
+                            padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "600",
+                            border: `1px solid ${p.available === false ? C.green : C.yellow}`,
+                            background: "transparent",
+                            color: p.available === false ? C.green : C.yellow,
+                            cursor: "pointer", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {p.available === false ? "Disponible" : "Indisponible"}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1578,6 +1603,30 @@ const AdminDashboard = () => {
   };
 
   const handleStatusUpdate = async (orderId, type, value) => {
+    // Remboursement automatique si on annule un paiement
+    if (type === "payment" && value === "cancelled") {
+      const refundResult = await paymentApi.refund(orderId);
+      setOrders((prev) => prev.map((o) => {
+        if (o._id !== orderId) return o;
+        return { ...o, paymentStatus: "cancelled", orderStatus: "cancelled", refund: refundResult };
+      }));
+      const methodLabel = { wave: "Wave", orange_money: "Orange Money", free_money: "Free Money", card: "Carte", whatsapp: "WhatsApp" };
+      const order = orders.find(o => o._id === orderId);
+      const method = methodLabel[order?.paymentMethod] || order?.paymentMethod || "";
+      if (refundResult.manualRequired) {
+        toast.warning("Remboursement manuel requis", {
+          description: `Veuillez rembourser ${refundResult.amount?.toLocaleString("fr-SN")} F CFA manuellement sur ${method}.`,
+          duration: 8000,
+        });
+      } else {
+        toast.success(`Remboursement initié sur ${method}`, {
+          description: `${refundResult.amount?.toLocaleString("fr-SN")} F CFA seront crédités sur le compte ${method} du client.`,
+          duration: 6000,
+        });
+      }
+      return refundResult;
+    }
+
     const payload = type === "payment" ? { paymentStatus: value } : { orderStatus: value };
     const updated = await ordersApi.updateStatus(orderId, payload);
     setOrders((prev) => prev.map((o) => o._id === orderId ? updated : o));

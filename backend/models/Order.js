@@ -61,7 +61,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'completed', 'failed'],
+    enum: ['pending', 'completed', 'failed', 'cancelled'],
     default: 'pending'
   },
   orderStatus: {
@@ -72,6 +72,12 @@ const orderSchema = new mongoose.Schema({
   transactionId: {
     type: String,
     default: null
+  },
+  refund: {
+    status:      { type: String, enum: ['none', 'processing', 'completed', 'failed', 'manual_required'], default: 'none' },
+    refundId:    { type: String, default: null },
+    amount:      { type: Number, default: 0 },
+    processedAt: { type: Date, default: null },
   },
   notes: {
     type: String,

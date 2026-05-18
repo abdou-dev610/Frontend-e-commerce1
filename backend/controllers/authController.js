@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
-import { sendWelcomeEmail } from '../services/emailService.js';
+import { sendWelcomeEmail, sendVerificationEmail } from '../services/emailService.js';
 
 // Helper: Créer un token JWT
 const createToken = (user) => {
@@ -53,17 +53,19 @@ export const signUp = async (req, res) => {
     const token = createToken(newUser);
     console.log("🔑 Token créé");
 
-    // Envoyer un email de bienvenue
-    console.log("📧 Envoi email de bienvenue...");
+    // Générer token de vérification email
+    const verificationToken = newUser.generateVerificationToken();
+    await newUser.save();
+
+    // Envoyer email de vérification + bienvenue
     try {
-      await sendWelcomeEmail({
-        email: newUser.email,
-        fullName: newUser.fullName || 'Utilisateur'
-      });
-      console.log("✅ Email de bienvenue envoyé");
+      const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+      await Promise.all([
+        sendWelcomeEmail({ email: newUser.email, fullName: newUser.fullName || 'Utilisateur' }),
+        sendVerificationEmail({ email: newUser.email, fullName: newUser.fullName || 'Utilisateur', verifyUrl })
+      ]);
     } catch (emailError) {
-      console.error("⚠️ Erreur lors de l'envoi de l'email de bienvenue:", emailError.message);
-      // Ne pas arrêter l'inscription si l'email échoue
+      console.error("⚠️ Erreur email:", emailError.message);
     }
 
     const responseData = {
@@ -190,6 +192,51 @@ export const verifyToken = async (req, res) => {
       user: user.toPublic()
     });
   } catch (error) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ message: 'Token requis' });
+
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpiry: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Token invalide ou expiré' });
+    }
+
+    user.emailVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpiry = undefined;
+    await user.save();
+
+    return res.json({ message: 'Email vérifié avec succès', user: user.toPublic() });
+  } catch (error) {
+    console.error('Verify Email Error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const resendVerification = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    if (user.emailVerified) return res.status(400).json({ message: 'Email déjà vérifié' });
+
+    const verificationToken = user.generateVerificationToken();
+    await user.save();
+
+    const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+    await sendVerificationEmail({ email: user.email, fullName: user.fullName, verifyUrl });
+
+    return res.json({ message: 'Email de vérification renvoyé' });
+  } catch (error) {
+    console.error('Resend Verification Error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };

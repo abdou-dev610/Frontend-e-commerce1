@@ -3,7 +3,6 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 const cats = [
   { name: "Lacostes",   image: "/images/icones/Lacostes.png",   color: "#ea580c", bgColor: "#fef3c7" },
-  { name: "Chaussures", image: "/images/icones/Chaussures.png", color: "#f97316", bgColor: "#fed7aa" },
   { name: "Abayas",     image: "/images/icones/abayas.png",     color: "#ea580c", bgColor: "#fed7aa" },
   { name: "Qamis",      image: "/images/icones/qamis.png",      color: "#f97316", bgColor: "#fef3c7" },
   { name: "Pullovers",  image: "/images/icones/pullovers.png",  color: "#ea580c", bgColor: "#fed7aa" },

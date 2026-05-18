@@ -1,49 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getToken } from '@/integrations/api/client';
-import { ShoppingBag, Calendar, MapPin, DollarSign, ChevronDown, X } from 'lucide-react';
+import { ShoppingBag, Calendar, MapPin, DollarSign, ChevronDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ORDERS_PER_PAGE = 5;
 
 export default function MyOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(page);
+  }, [page]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async (currentPage = 1) => {
     try {
+      setLoading(true);
       const token = getToken();
-      if (!token) {
-        console.error('No token found');
-        setOrders([]);
-        setLoading(false);
-        return;
-      }
+      if (!token) { setOrders([]); setLoading(false); return; }
 
-      const apiUrl = `${import.meta.env.VITE_API_URL || '/api'}/orders`;
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const apiUrl = `${import.meta.env.VITE_API_URL || '/api'}/orders?page=${currentPage}&limit=${ORDERS_PER_PAGE}`;
+      const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${token}` } });
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des commandes');
-      }
+      if (!response.ok) throw new Error('Erreur lors de la récupération des commandes');
 
       const data = await response.json();
-      setOrders(data || []);
+      if (Array.isArray(data)) {
+        setOrders(data);
+        setTotalPages(1);
+        setTotal(data.length);
+      } else {
+        setOrders(data.orders || []);
+        setTotalPages(data.pagination?.pages || 1);
+        setTotal(data.pagination?.total || 0);
+      }
     } catch (error) {
       console.error('Error fetching orders:', error);
       setOrders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -440,7 +443,7 @@ export default function MyOrders() {
                         <button
                           onClick={() => {
                             const msg = `Bonjour, je souhaite télécharger la facture pour ma commande #${order._id?.slice(-8).toUpperCase() || 'N/A'}.`;
-                            window.open(`https://wa.me/221762048119?text=${encodeURIComponent(msg)}`, '_blank');
+                            window.open(`https://wa.me/221706242361?text=${encodeURIComponent(msg)}`, '_blank');
                           }}
                           style={{
                           flex: 1,
@@ -466,7 +469,7 @@ export default function MyOrders() {
                         <button
                           onClick={() => {
                             const msg = `Bonjour, j'ai besoin d'aide pour ma commande #${order._id?.slice(-8).toUpperCase() || 'N/A'}.`;
-                            window.open(`https://wa.me/221762048119?text=${encodeURIComponent(msg)}`, '_blank');
+                            window.open(`https://wa.me/221706242361?text=${encodeURIComponent(msg)}`, '_blank');
                           }}
                           style={{
                           flex: 1,
@@ -500,6 +503,61 @@ export default function MyOrders() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '24px 0 8px' }}>
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              padding: '8px 16px', borderRadius: '8px', border: '1px solid #e5e7eb',
+              background: page === 1 ? '#f3f4f6' : 'white', color: page === 1 ? '#9ca3af' : '#374151',
+              cursor: page === 1 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px'
+            }}
+          >
+            <ChevronLeft size={16} /> Précédent
+          </button>
+
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                style={{
+                  width: '36px', height: '36px', borderRadius: '8px', border: 'none',
+                  background: page === p ? '#ea580c' : '#f3f4f6',
+                  color: page === p ? 'white' : '#374151',
+                  cursor: 'pointer', fontWeight: '700', fontSize: '14px'
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              padding: '8px 16px', borderRadius: '8px', border: '1px solid #e5e7eb',
+              background: page === totalPages ? '#f3f4f6' : 'white',
+              color: page === totalPages ? '#9ca3af' : '#374151',
+              cursor: page === totalPages ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px'
+            }}
+          >
+            Suivant <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
+      {total > 0 && (
+        <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '13px', paddingBottom: '16px' }}>
+          {total} commande{total > 1 ? 's' : ''} au total
+        </p>
+      )}
 
       {/* Animations */}
       <style>{`

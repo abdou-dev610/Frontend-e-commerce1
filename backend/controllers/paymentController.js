@@ -99,6 +99,65 @@ export const checkPaymentStatus = async (req, res) => {
   }
 };
 
+export const refundPayment = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: 'Commande introuvable' });
+    }
+
+    if (order.paymentStatus !== 'completed') {
+      return res.status(400).json({
+        message: 'Seules les commandes avec paiement confirmé peuvent être remboursées',
+        paymentStatus: order.paymentStatus
+      });
+    }
+
+    const METHOD_LABELS = {
+      wave: 'Wave', orange_money: 'Orange Money',
+      free_money: 'Free Money', card: 'Carte', whatsapp: 'WhatsApp'
+    };
+
+    console.log(`💸 Remboursement demandé pour commande ${order.orderNumber} - ${order.totalAmount} XOF via ${METHOD_LABELS[order.paymentMethod] || order.paymentMethod}`);
+
+    const refundResult = await paytechService.refundPayment(
+      order.transactionId,
+      order.totalAmount,
+      `Annulation commande ${order.orderNumber}`
+    );
+
+    order.paymentStatus = 'cancelled';
+    order.orderStatus = 'cancelled';
+    order.refund = {
+      status: refundResult.success ? (refundResult.status === 'completed' ? 'completed' : 'processing') : 'manual_required',
+      refundId: refundResult.refund_id || null,
+      amount: order.totalAmount,
+      processedAt: refundResult.success ? new Date() : null,
+    };
+    order.updatedAt = new Date();
+    await order.save();
+
+    const paymentMethodLabel = METHOD_LABELS[order.paymentMethod] || order.paymentMethod;
+
+    return res.json({
+      success: true,
+      refundStatus: order.refund.status,
+      refundId: order.refund.refundId,
+      amount: order.totalAmount,
+      paymentMethod: paymentMethodLabel,
+      message: refundResult.success
+        ? `Remboursement de ${order.totalAmount.toLocaleString('fr-SN')} F CFA initié sur ${paymentMethodLabel}`
+        : `Remboursement manuel requis sur ${paymentMethodLabel}`,
+      manualRequired: !refundResult.success,
+    });
+  } catch (error) {
+    console.error('Refund Error:', error);
+    return res.status(500).json({ message: 'Erreur lors du remboursement : ' + error.message });
+  }
+};
+
 export const handlePaymentWebhook = async (req, res) => {
   try {
     console.log('\n🔥🔥🔥 PAYMENT WEBHOOK RECEIVED 🔥🔥🔥');

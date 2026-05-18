@@ -1,7 +1,12 @@
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import ExcludedProduct from '../models/ExcludedProduct.js';
+import UnavailableProduct from '../models/UnavailableProduct.js';
 import { logAuditTrail } from '../services/auditService.js';
+import { products as staticProducts } from '../data/products.js';
+
+const EXCLUDED_CATEGORIES = ['Chaussures'];
 
 const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
@@ -334,29 +339,119 @@ export const archiveUserOrders = async (req, res) => {
 
 export const getAdminProducts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
+    const page  = parseInt(req.query.page)  || 1;
+    const limit = parseInt(req.query.limit) || 200;
+    const skip  = (page - 1) * limit;
 
-    const products = await Product.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    const [excluded, unavailable] = await Promise.all([
+      ExcludedProduct.find().lean(),
+      UnavailableProduct.find().lean(),
+    ]);
+    const excludedIds    = new Set(excluded.map(e => e.staticId));
+    const unavailableIds = new Set(unavailable.map(u => u.staticId));
 
-    const total = await Product.countDocuments();
+    const dbProducts   = await Product.find().sort({ createdAt: -1 }).lean();
+    const normalizedDb = dbProducts.map(p => ({ ...p, id: p._id.toString(), source: 'db' }));
+
+    const normalizedStatic = staticProducts
+      .filter(p => !EXCLUDED_CATEGORIES.includes(p.category) && !excludedIds.has(p.id))
+      .map(p => ({
+        ...p,
+        _id:       p.id,
+        source:    'static',
+        stock:     p.stock ?? 100,
+        available: !unavailableIds.has(p.id),
+      }));
+
+    const all      = [...normalizedDb, ...normalizedStatic];
+    const paginated = all.slice(skip, skip + limit);
 
     return res.json({
-      products,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit)
-      }
+      products:   paginated,
+      pagination: { total: all.length, page, limit, pages: Math.ceil(all.length / limit) }
     });
   } catch (error) {
     console.error('Get Admin Products Error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const toggleProductAvailability = async (req, res) => {
+  try {
+    const { productId, source, available } = req.body;
+    if (!productId) return res.status(400).json({ message: 'productId requis' });
+
+    if (source === 'static') {
+      if (available) {
+        await UnavailableProduct.deleteOne({ staticId: productId });
+      } else {
+        await UnavailableProduct.findOneAndUpdate(
+          { staticId: productId },
+          { staticId: productId },
+          { upsert: true }
+        );
+      }
+      return res.json({ success: true, available });
+    }
+
+    // Produit MongoDB
+    const product = await Product.findByIdAndUpdate(
+      productId,
+      { available, updatedAt: new Date() },
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ message: 'Produit introuvable' });
+
+    return res.json({ success: true, available: product.available });
+  } catch (error) {
+    console.error('Toggle Availability Error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const deleteStaticProduct = async (req, res) => {
+  try {
+    const { staticId } = req.body;
+    if (!staticId) return res.status(400).json({ message: 'staticId requis' });
+    await ExcludedProduct.findOneAndUpdate(
+      { staticId },
+      { staticId },
+      { upsert: true, new: true }
+    );
+    return res.json({ success: true, message: 'Produit retiré du catalogue' });
+  } catch (error) {
+    console.error('Delete Static Product Error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const updateStaticProduct = async (req, res) => {
+  try {
+    const { staticId, ...data } = req.body;
+    if (!staticId) return res.status(400).json({ message: 'staticId requis' });
+
+    // Exclure l'original du catalogue statique
+    await ExcludedProduct.findOneAndUpdate(
+      { staticId },
+      { staticId },
+      { upsert: true, new: true }
+    );
+
+    // Créer le produit modifié dans MongoDB
+    const newProduct = new Product({
+      name:        data.name,
+      price:       parseFloat(data.price),
+      category:    data.category,
+      description: data.description || '',
+      image:       data.image,
+      images:      data.images || [data.image],
+      stock:       parseInt(data.stock, 10) || 100,
+    });
+    await newProduct.save();
+
+    return res.status(201).json({ ...newProduct.toObject(), source: 'db' });
+  } catch (error) {
+    console.error('Update Static Product Error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };

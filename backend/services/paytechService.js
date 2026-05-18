@@ -98,6 +98,56 @@ export const paytechService = {
     }
   },
 
+  // Rembourser un paiement
+  refundPayment: async (transactionId, amount, reason = 'Annulation commande') => {
+    try {
+      // MODE MOCK
+      if (!transactionId || transactionId.startsWith('MOCK-') || transactionId.startsWith('FALLBACK-')) {
+        console.log('✅ Mode MOCK - Remboursement simulé pour:', transactionId);
+        return {
+          success: true,
+          refund_id: `REFUND-${Date.now()}`,
+          status: 'completed',
+          amount,
+          message: 'Remboursement simulé avec succès'
+        };
+      }
+
+      // MODE PRODUCTION - Appel PayTech refund API
+      const refundData = {
+        transaction_id: transactionId,
+        amount: Math.round(amount * 100),
+        reason,
+        api_key: process.env.PAYTECH_API_KEY,
+        api_secret: process.env.PAYTECH_API_SECRET,
+      };
+
+      const response = await axios.post(
+        `${process.env.PAYTECH_API_URL}/api/payment/refund`,
+        refundData,
+        {
+          headers: {
+            'X-API-KEY': process.env.PAYTECH_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000,
+        }
+      );
+
+      console.log('✅ PayTech refund response:', response.data);
+      return { success: true, ...response.data };
+    } catch (error) {
+      console.error('❌ PayTech Refund Error:', error.message);
+      // En mode dégradé, on laisse l'admin gérer manuellement
+      return {
+        success: false,
+        refund_id: null,
+        status: 'manual_required',
+        message: 'Remboursement manuel requis : ' + error.message
+      };
+    }
+  },
+
   // Vérifier le statut d'un paiement
   checkPaymentStatus: async (transactionId) => {
     try {

@@ -89,7 +89,7 @@ export const getCategories = async () => {
   } catch (error) {
     console.error('Error fetching categories:', error);
     // Return default categories if API fails
-    return ['Tous', 'Vêtements', 'Accessoires', 'Chaussures'];
+    return ['Tous', 'Vêtements', 'Accessoires'];
   }
 };
 
@@ -121,5 +121,5 @@ export const formatPrice = (price) => {
 
 export const getWhatsAppLink = (product) => {
   const message = `Bonjour, je suis intéressé par ce produit:\n\n${product.name}\nPrix: ${formatPrice(product.price)}\n\nVoulez-vous plus d'informations?`;
-  return `https://wa.me/221762048119?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/221706242361?text=${encodeURIComponent(message)}`;
 };

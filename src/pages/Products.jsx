@@ -6,7 +6,7 @@ import CategoryCard from "@/components/CategoryCard";
 import { getProducts, getCategories } from "@/services/productService";
 
 const CATEGORY_ICONS = {
-  Lacostes: "👕", Chaussures: "👟", Abayas: "👗",
+  Lacostes: "👕", Abayas: "👗",
   Qamis: "🕌", Pullovers: "🧥", Ensembles: "👔",
   Pantalons: "👖", Tous: "🛍️",
 };

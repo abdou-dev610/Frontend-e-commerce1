@@ -278,6 +278,12 @@ export const paymentApi = {
       method: "POST",
       body: JSON.stringify({ orderId }),
     }),
+
+  refund: (orderId) =>
+    apiCall("/payment/refund", {
+      method: "POST",
+      body: JSON.stringify({ orderId }),
+    }),
 };
 
 // ================= ADMIN =================
@@ -303,6 +309,15 @@ export const adminApi = {
   getStats: () => apiCall('/admin/stats'),
 
   getProducts: () => apiCall('/admin/products'),
+
+  deleteStaticProduct: (staticId) =>
+    apiCall('/admin/products/static/delete', { method: 'POST', body: JSON.stringify({ staticId }) }),
+
+  updateStaticProduct: (staticId, data) =>
+    apiCall('/admin/products/static/update', { method: 'POST', body: JSON.stringify({ staticId, ...data }) }),
+
+  toggleAvailability: (productId, source, available) =>
+    apiCall('/admin/products/toggle-availability', { method: 'POST', body: JSON.stringify({ productId, source, available }) }),
 
   getUsers: () => apiCall('/admin/users'),
 

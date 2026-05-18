@@ -33,23 +33,22 @@ import orderRoutes from './routes/orders.js';
 import paymentRoutes from './routes/payment.js';
 import adminRoutes from './routes/admin.js';
 import uploadRoutes from './routes/upload.js';
+import favoriteRoutes from './routes/favorites.js';
 
 const app = express();
 const DEFAULT_PORT = Number(process.env.PORT) || 5000;
 const MAX_PORT_ATTEMPTS = 10;
 
 // Middleware
+const DEV_ORIGINS = ['http://localhost:8080','http://localhost:8081','http://localhost:8082','http://localhost:5173','http://localhost:3000'];
+const PROD_ORIGINS = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [];
+const allowedOrigins = [...DEV_ORIGINS, ...PROD_ORIGINS];
+
 app.use(cors({
-  origin: [
-    'http://localhost:8080', 
-    'http://localhost:8081', 
-    'http://localhost:8082', 
-    'http://localhost:5173',
-    'http://localhost:3000',
-    // Production Vercel
-    'https://*.vercel.app',
-    'https://*.vercel.com'
-  ],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origine non autorisée — ${origin}`));
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -76,6 +75,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/favorites', favoriteRoutes);
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/upload', uploadRoutes);
 

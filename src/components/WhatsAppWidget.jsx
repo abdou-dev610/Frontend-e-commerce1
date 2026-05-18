@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Send, MessageCircle } from "lucide-react";
 
-const WA_NUMBER = "221762048119";
+const WA_NUMBER = "221706242361";
 const WA_URL    = `https://wa.me/${WA_NUMBER}`;
 
 const QUICK_MESSAGES = [
