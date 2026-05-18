@@ -78,6 +78,19 @@ const Hero = () => (
         </p>
 
 
+        {/* Features Row */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", paddingTop: "8px" }}>
+          {[
+            { icon: "✅", text: "100% Authentique" },
+            { icon: "💳", text: "Paiement Sécurisé" }
+          ].map((feature, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: "600", color: "rgba(255,255,255,0.95)", textShadow: "1px 1px 4px rgba(0,0,0,0.3)" }}>
+              <span style={{ fontSize: "20px" }}>{feature.icon}</span>
+              {feature.text}
+            </div>
+          ))}
+        </div>
+
         {/* CTA Buttons */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingTop: "24px", maxWidth: "500px" }}>
           <Link
